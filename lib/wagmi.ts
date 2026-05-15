@@ -1,6 +1,8 @@
 import { createConfig, http } from 'wagmi';
-import { metaMask } from 'wagmi/connectors';
+import { metaMask, walletConnect } from 'wagmi/connectors';
 import { blockDAGMainnet } from './chains';
+
+const projectId = '84450fed570622615a4c3f3862b57c72';   // ← Your Project ID
 
 export const config = createConfig({
   chains: [blockDAGMainnet],
@@ -9,9 +11,9 @@ export const config = createConfig({
       dappMetadata: {
         name: 'MAUI — Multiple Application User Interface',
         url: 'https://maui-multiple-aplication-user-inter.vercel.app',
-        iconUrl: 'https://maui-multiple-aplication-user-inter.vercel.app/favicon.ico',
       },
     }),
+    walletConnect({ projectId }),
   ],
   transports: {
     [blockDAGMainnet.id]: http('https://rpc.bdagscan.com'),
