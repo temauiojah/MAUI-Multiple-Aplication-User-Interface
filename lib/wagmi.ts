@@ -8,7 +8,8 @@ export const config = createConfig({
     metaMask({
       dappMetadata: {
         name: 'MAUI — Multiple Application User Interface',
-        url: 'http://localhost:3000',
+        url: 'https://maui-multiple-aplication-user-inter.vercel.app',
+        iconUrl: 'https://maui-multiple-aplication-user-inter.vercel.app/favicon.ico',
       },
     }),
   ],
