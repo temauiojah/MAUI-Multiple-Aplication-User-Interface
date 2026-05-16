@@ -26,10 +26,9 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Hamburger */}
         <button 
           onClick={() => setMenuOpen(!menuOpen)}
-          className="md:hidden text-3xl"
+          className="md:hidden text-3xl focus:outline-none"
         >
           {menuOpen ? '✕' : '☰'}
         </button>
