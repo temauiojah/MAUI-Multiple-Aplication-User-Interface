@@ -10,7 +10,7 @@ const MAUI_TOKEN_ADDRESS = '0xe584D0963949d90C30Db7F9128765749510c67F6';
 function formatCompact(num: number): string {
   if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(2) + 'B';
   if (num >= 1_000_000) return (num / 1_000_000).toFixed(2) + 'M';
-  if (num >= 1_000) return (num / 1_000).toFixed(2) + 'K';
+  if (num >= 1_000) return (num / 1_000).toFixed(1) + 'K';
   return num.toFixed(2);
 }
 
@@ -18,12 +18,9 @@ export default function MetaMaskPage() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
 
-  const { data: bdagBalance } = useBalance({
-    address,
-    chainId: blockDAGMainnet.id,
-  });
+  const { data: bdagBalance } = useBalance({ address, chainId: blockDAGMainnet.id });
 
-  const { data: mauiRawBalance } = useReadContract({
+  const { data: mauiRaw } = useReadContract({
     address: MAUI_TOKEN_ADDRESS,
     abi: [{
       name: 'balanceOf',
@@ -41,17 +38,11 @@ export default function MetaMaskPage() {
     ? parseFloat(formatUnits(bdagBalance.value, 18)).toFixed(4) 
     : '0.0000';
 
-  const mauiBalance = mauiRawBalance 
-    ? parseFloat(formatUnits(mauiRawBalance as bigint, 18)) 
-    : 0;
-
-  const formattedMaui = formatCompact(mauiBalance);
+  const mauiNum = mauiRaw ? parseFloat(formatUnits(mauiRaw as bigint, 18)) : 0;
+  const formattedMaui = formatCompact(mauiNum);
 
   const connectMetaMask = async () => {
-    if (!(window as any).ethereum) {
-      alert("MetaMask not detected!");
-      return;
-    }
+    if (!(window as any).ethereum) return alert("MetaMask not detected");
     try {
       await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
     } catch (err: any) {
@@ -82,12 +73,12 @@ export default function MetaMaskPage() {
               <div className="grid grid-cols-2 gap-8 text-center">
                 <div>
                   <p className="text-sm text-zinc-400">BDAG Balance</p>
-                  <p className="text-6xl font-bold tracking-tighter text-white">{formattedBdag}</p>
+                  <p className="text-5xl font-bold tracking-tighter text-white">{formattedBdag}</p>
                   <p className="text-emerald-400">BDAG</p>
                 </div>
                 <div>
                   <p className="text-sm text-zinc-400">MAUI Balance</p>
-                  <p className="text-6xl font-bold tracking-tighter text-blue-400">{formattedMaui}</p>
+                  <p className="text-5xl font-bold tracking-tighter text-blue-400">{formattedMaui}</p>
                   <p className="text-blue-400">MAUI</p>
                 </div>
               </div>
