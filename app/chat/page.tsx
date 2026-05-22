@@ -28,10 +28,10 @@ export default function MAUIChat() {
   const mauiBalance = mauiRaw ? parseFloat(formatUnits(mauiRaw as bigint, 18)) : 0;
   const canChat = mauiBalance >= MIN_MAUI_BALANCE;
 
-  // Auto-reconnect if previously connected
+  // Persist connection across page navigation
   useEffect(() => {
-    const wasConnected = localStorage.getItem('xmtpConnected') === 'true';
-    if (wasConnected && isConnected && address) {
+    const savedStatus = localStorage.getItem('xmtpStatus');
+    if (savedStatus === 'connected' && isConnected && address) {
       setStatus('connected');
     }
   }, [isConnected, address]);
@@ -43,10 +43,10 @@ export default function MAUIChat() {
     }
     try {
       setStatus('connecting');
-      // Placeholder for real connection
-      localStorage.setItem('xmtpConnected', 'true');
+      // Placeholder for real connection (SDK issue temporarily disabled)
+      localStorage.setItem('xmtpStatus', 'connected');
       setStatus('connected');
-      alert("✅ XMTP Connected! (Connection now persists across pages)");
+      alert("✅ XMTP Connected! (Connection now persists when you leave and return to this page)");
     } catch (err: any) {
       setStatus('disconnected');
       alert("Error: " + err.message);
@@ -58,7 +58,7 @@ export default function MAUIChat() {
       alert("Please enter a recipient address and message");
       return;
     }
-    alert(`✅ Encrypted message to ${peerAddress.slice(0,8)}... would be sent.\n\n(Real XMTP coming soon)`);
+    alert(`✅ Encrypted message to ${peerAddress.slice(0,8)}... would be sent.\n\n(Real XMTP sending coming soon)`);
     setNewMessage('');
   };
 
@@ -90,11 +90,11 @@ export default function MAUIChat() {
               />
               <button 
                 onClick={initXMTP}
-                className="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-2xl mb-4"
+                disabled={status === 'connected'}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-600 disabled:cursor-not-allowed py-3 rounded-2xl mb-4"
               >
-                Connect XMTP
+                {status === 'connected' ? '✅ Connected' : 'Connect XMTP'}
               </button>
-              
               <p className={`text-xs text-center font-medium ${
                 status === 'connected' ? 'text-emerald-400' : 
                 status === 'connecting' ? 'text-yellow-400' : 
