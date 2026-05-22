@@ -28,13 +28,11 @@ export default function MAUIChat() {
   const mauiBalance = mauiRaw ? parseFloat(formatUnits(mauiRaw as bigint, 18)) : 0;
   const canChat = mauiBalance >= MIN_MAUI_BALANCE;
 
-  // Auto-recognise existing MetaMask connection
+  // Auto-recognise connection from other pages
   useEffect(() => {
     if (isConnected && address) {
       const saved = localStorage.getItem('xmtpStatus');
-      if (saved === 'connected') {
-        setStatus('connected');
-      }
+      if (saved === 'connected') setStatus('connected');
     }
   }, [isConnected, address]);
 
@@ -46,7 +44,7 @@ export default function MAUIChat() {
     setStatus('connecting');
     localStorage.setItem('xmtpStatus', 'connected');
     setStatus('connected');
-    alert("✅ XMTP Connected! (Real messaging coming soon)");
+    alert("✅ XMTP Connected! (Real encrypted messaging coming soon)");
   };
 
   const sendMessage = async () => {
@@ -54,8 +52,14 @@ export default function MAUIChat() {
       alert("Please enter a recipient address and message");
       return;
     }
-    alert(`✅ Encrypted message to ${peerAddress.slice(0,8)}... would be sent.\n\n(Real XMTP coming soon)`);
+    // Fake successful send for testing
+    const fakeMsg = {
+      content: newMessage,
+      senderAddress: address?.toLowerCase(),
+    };
+    setMessages(prev => [...prev, fakeMsg]);
     setNewMessage('');
+    alert(`✅ Message sent to ${peerAddress.slice(0,8)}... (Real XMTP coming soon)`);
   };
 
   return (
