@@ -3,7 +3,6 @@
 import { useAccount, useDisconnect, useBalance, useReadContract } from 'wagmi';
 import { blockDAGMainnet } from '@/lib/chains';
 import { formatUnits } from 'viem';
-import { useState } from 'react';
 
 const MAUI_TOKEN_ADDRESS = '0xe584D0963949d90C30Db7F9128765749510c67F6';
 
@@ -39,9 +38,7 @@ export default function MetaMaskPage() {
     }
   };
 
-  const handleDisconnect = () => {
-    disconnect();
-  };
+  const handleDisconnect = () => disconnect();
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white pt-20 pb-12">
@@ -69,16 +66,20 @@ export default function MetaMaskPage() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-8 text-center">
-                <div>
-                  <p className="text-sm text-zinc-400">BDAG Balance</p>
-                  <p className="text-5xl font-bold tracking-tighter text-white">{formattedBdag}</p>
-                  <p className="text-emerald-400">BDAG</p>
+              {/* Stacked balances - one per line on mobile */}
+              <div className="space-y-10">
+                {/* BDAG */}
+                <div className="text-center border-b border-zinc-700 pb-8">
+                  <p className="text-sm text-zinc-400 mb-1">BDAG Balance</p>
+                  <p className="text-6xl font-bold tracking-tighter text-white">{formattedBdag}</p>
+                  <p className="text-emerald-400 text-2xl">BDAG</p>
                 </div>
-                <div>
-                  <p className="text-sm text-zinc-400">MAUI Balance</p>
-                  <p className="text-5xl font-bold tracking-tighter text-blue-400">{formattedMaui}</p>
-                  <p className="text-blue-400">MAUI</p>
+
+                {/* MAUI */}
+                <div className="text-center">
+                  <p className="text-sm text-zinc-400 mb-1">MAUI Balance</p>
+                  <p className="text-6xl font-bold tracking-tighter text-blue-400">{formattedMaui}</p>
+                  <p className="text-blue-400 text-2xl">MAUI</p>
                 </div>
               </div>
             </div>

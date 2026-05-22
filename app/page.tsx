@@ -19,10 +19,10 @@ export default function Home() {
             <p className="text-zinc-400 mt-3">Wallet + Balance</p>
           </Link>
 
-          <Link href="/pay" className="bg-zinc-900 border border-zinc-700 hover:border-emerald-500 rounded-3xl p-10 transition-all">
+          <Link href="/buy" className="bg-zinc-900 border border-zinc-700 hover:border-emerald-500 rounded-3xl p-10 transition-all">
             <div className="text-5xl mb-6">🌐</div>
-            <h2 className="text-3xl font-bold">MAUI PAY</h2>
-            <p className="text-zinc-400 mt-3">Pay with MAUI</p>
+            <h2 className="text-3xl font-bold">MAUI BUY</h2>
+            <p className="text-zinc-400 mt-3">Buy with MAUI</p>
           </Link>
         </div>
       </div>

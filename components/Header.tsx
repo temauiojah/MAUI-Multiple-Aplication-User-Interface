@@ -1,46 +1,74 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
 
 export default function Header() {
-  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   const isActive = (path: string) => pathname === path;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 bg-zinc-900/95 border-b border-zinc-800 backdrop-blur-md z-50">
-      <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
-        <Link href="/" className="text-2xl font-bold">MAUI</Link>
+    <>
+      {/* Top Nav */}
+      <header className="fixed top-0 left-0 right-0 bg-zinc-950 border-b border-zinc-800 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+          <Link href="/" className="text-3xl font-bold tracking-tight">MAUI</Link>
 
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium">
-          <Link href="/metamask" className={`px-5 py-2 rounded-2xl transition-all ${isActive('/metamask') ? 'bg-blue-600 text-white' : 'hover:text-blue-400'}`}> .MetaMask </Link>
-          <Link href="/buy" className={`px-5 py-2 rounded-2xl transition-all ${isActive('/buy') ? 'bg-blue-600 text-white' : 'hover:text-emerald-400'}`}> .Buy </Link>
-          <Link href="/grokoracle" className={`px-5 py-2 rounded-2xl transition-all ${isActive('/grokoracle') ? 'bg-blue-600 text-white' : 'hover:text-purple-400'}`}> .GROKoracle </Link>
-          <Link href="/chat" className={`px-5 py-2 rounded-2xl transition-all ${isActive('/chat') ? 'bg-blue-600 text-white' : 'hover:text-pink-400'}`}> .Chat </Link>
-          <Link href="/dns" className={`px-5 py-2 rounded-2xl transition-all ${isActive('/dns') ? 'bg-blue-600 text-white' : 'hover:text-amber-400'}`}> .DNS </Link>
-          <Link href="/bdagscan" className={`px-5 py-2 rounded-2xl transition-all ${isActive('/bdagscan') ? 'bg-blue-600 text-white' : 'hover:text-sky-400'}`}> .BdagScan </Link>
+          {/* Desktop Menu */}
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
+            <Link href="/metamask" className={isActive('/metamask') ? 'text-blue-400' : 'hover:text-zinc-300'}>MetaMask</Link>
+            <Link href="/buy" className={isActive('/buy') ? 'text-blue-400' : 'hover:text-zinc-300'}>Buy</Link>
+            <Link href="/grokoracle" className={isActive('/grokoracle') ? 'text-blue-400' : 'hover:text-zinc-300'}>GROKoracle</Link>
+            <Link href="/chat" className={isActive('/chat') ? 'text-blue-400' : 'hover:text-zinc-300'}>Chat</Link>
+            <Link href="/dns" className={isActive('/dns') ? 'text-blue-400' : 'hover:text-zinc-300'}>DNS</Link>
+            <Link href="/bdagscan" className={isActive('/bdagscan') ? 'text-blue-400' : 'hover:text-zinc-300'}>BdagScan</Link>
+          </nav>
+
+          {/* Hamburger - Mobile Only */}
+          <button 
+            onClick={() => setMenuOpen(true)}
+            className="md:hidden text-3xl text-white"
+          >
+            ☰
+          </button>
         </div>
+      </header>
 
-        <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-3xl">
-          {menuOpen ? '✕' : '☰'}
-        </button>
-      </div>
-
+      {/* Slide-in Sidebar */}
       {menuOpen && (
-        <div className="md:hidden bg-zinc-900 border-t border-zinc-800 py-6">
-          <div className="flex flex-col gap-4 px-8 text-lg">
-            <Link href="/metamask" onClick={() => setMenuOpen(false)} className={`py-3 px-5 rounded-2xl ${isActive('/metamask') ? 'bg-blue-600 text-white' : 'hover:bg-zinc-800'}`}> .MetaMask </Link>
-            <Link href="/buy" onClick={() => setMenuOpen(false)} className={`py-3 px-5 rounded-2xl ${isActive('/buy') ? 'bg-blue-600 text-white' : 'hover:bg-zinc-800'}`}> .Buy </Link>
-            <Link href="/grokoracle" onClick={() => setMenuOpen(false)} className={`py-3 px-5 rounded-2xl ${isActive('/grokoracle') ? 'bg-blue-600 text-white' : 'hover:bg-zinc-800'}`}> .GROKoracle </Link>
-            <Link href="/chat" onClick={() => setMenuOpen(false)} className={`py-3 px-5 rounded-2xl ${isActive('/chat') ? 'bg-blue-600 text-white' : 'hover:bg-zinc-800'}`}> .Chat </Link>
-            <Link href="/dns" onClick={() => setMenuOpen(false)} className={`py-3 px-5 rounded-2xl ${isActive('/dns') ? 'bg-blue-600 text-white' : 'hover:bg-zinc-800'}`}> .DNS </Link>
-            <Link href="/bdagscan" onClick={() => setMenuOpen(false)} className={`py-3 px-5 rounded-2xl ${isActive('/bdagscan') ? 'bg-blue-600 text-white' : 'hover:bg-zinc-800'}`}> .BdagScan </Link>
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/70 z-50 md:hidden"
+            onClick={() => setMenuOpen(false)}
+          />
+
+          {/* Sidebar */}
+          <div className="fixed top-0 left-0 bottom-0 w-80 bg-zinc-900 border-r border-zinc-700 z-50 shadow-2xl md:hidden transition-transform duration-300">
+            <div className="p-6 flex items-center justify-between border-b border-zinc-700">
+              <Link href="/" className="text-3xl font-bold">MAUI</Link>
+              <button 
+                onClick={() => setMenuOpen(false)}
+                className="text-4xl text-zinc-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex flex-col p-6 text-lg font-medium gap-6">
+              <Link href="/metamask" onClick={() => setMenuOpen(false)} className={isActive('/metamask') ? 'text-blue-400' : ''}>MetaMask</Link>
+              <Link href="/buy" onClick={() => setMenuOpen(false)} className={isActive('/buy') ? 'text-blue-400' : ''}>Buy</Link>
+              <Link href="/grokoracle" onClick={() => setMenuOpen(false)} className={isActive('/grokoracle') ? 'text-blue-400' : ''}>GROKoracle</Link>
+              <Link href="/chat" onClick={() => setMenuOpen(false)} className={isActive('/chat') ? 'text-blue-400' : ''}>Chat</Link>
+              <Link href="/dns" onClick={() => setMenuOpen(false)} className={isActive('/dns') ? 'text-blue-400' : ''}>DNS</Link>
+              <Link href="/bdagscan" onClick={() => setMenuOpen(false)} className={isActive('/bdagscan') ? 'text-blue-400' : ''}>BdagScan</Link>
+            </div>
           </div>
-        </div>
+        </>
       )}
-    </nav>
+    </>
   );
 }
