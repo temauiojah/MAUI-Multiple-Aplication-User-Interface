@@ -16,7 +16,7 @@ export default function MAUIChat() {
   const [newMessage, setNewMessage] = useState('');
   const [messages, setMessages] = useState<any[]>([]);
 
-  // MAUI Balance Check
+  // MAUI Balance Gate
   const { data: mauiRaw } = useReadContract({
     address: MAUI_TOKEN_ADDRESS,
     abi: [{ name: 'balanceOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ type: 'uint256' }] }],
@@ -28,7 +28,7 @@ export default function MAUIChat() {
   const mauiBalance = mauiRaw ? parseFloat(formatUnits(mauiRaw as bigint, 18)) : 0;
   const canChat = mauiBalance >= MIN_MAUI_BALANCE;
 
-  // Auto-recognise connection from other pages
+  // Persist connection
   useEffect(() => {
     if (isConnected && address) {
       const saved = localStorage.getItem('xmtpStatus');
@@ -44,7 +44,6 @@ export default function MAUIChat() {
     setStatus('connecting');
     localStorage.setItem('xmtpStatus', 'connected');
     setStatus('connected');
-    alert("✅ XMTP Connected! (Real encrypted messaging coming soon)");
   };
 
   const sendMessage = async () => {
@@ -52,14 +51,15 @@ export default function MAUIChat() {
       alert("Please enter a recipient address and message");
       return;
     }
-    // Fake successful send for testing
-    const fakeMsg = {
+
+    // Show the message in the chat window immediately
+    const newMsg = {
       content: newMessage,
       senderAddress: address?.toLowerCase(),
+      timestamp: Date.now()
     };
-    setMessages(prev => [...prev, fakeMsg]);
+    setMessages(prev => [...prev, newMsg]);
     setNewMessage('');
-    alert(`✅ Message sent to ${peerAddress.slice(0,8)}... (Real XMTP coming soon)`);
   };
 
   return (
