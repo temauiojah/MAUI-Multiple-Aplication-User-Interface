@@ -17,8 +17,8 @@ export default function Header() {
 
         <div className="hidden md:flex items-center gap-8 text-sm font-medium">
           <Link href="/metamask" className={`px-5 py-2 rounded-2xl transition-all ${isActive('/metamask') ? 'bg-blue-600 text-white' : 'hover:text-blue-400'}`}> .MetaMask </Link>
-          <Link href="/pay" className={`px-5 py-2 rounded-2xl transition-all ${isActive('/pay') ? 'bg-blue-600 text-white' : 'hover:text-emerald-400'}`}> .Pay </Link>
-          <Link href="/grok" className={`px-5 py-2 rounded-2xl transition-all ${isActive('/grok') ? 'bg-blue-600 text-white' : 'hover:text-purple-400'}`}> .Grok AI </Link>
+          <Link href="/buy" className={`px-5 py-2 rounded-2xl transition-all ${isActive('/buy') ? 'bg-blue-600 text-white' : 'hover:text-emerald-400'}`}> .Buy </Link>
+          <Link href="/grokoracle" className={`px-5 py-2 rounded-2xl transition-all ${isActive('/grokoracle') ? 'bg-blue-600 text-white' : 'hover:text-purple-400'}`}> .GROKoracle </Link>
           <Link href="/chat" className={`px-5 py-2 rounded-2xl transition-all ${isActive('/chat') ? 'bg-blue-600 text-white' : 'hover:text-pink-400'}`}> .Chat </Link>
           <Link href="/dns" className={`px-5 py-2 rounded-2xl transition-all ${isActive('/dns') ? 'bg-blue-600 text-white' : 'hover:text-amber-400'}`}> .DNS </Link>
           <Link href="/bdagscan" className={`px-5 py-2 rounded-2xl transition-all ${isActive('/bdagscan') ? 'bg-blue-600 text-white' : 'hover:text-sky-400'}`}> .BdagScan </Link>
@@ -29,13 +29,12 @@ export default function Header() {
         </button>
       </div>
 
-      {/* Mobile Menu */}
       {menuOpen && (
         <div className="md:hidden bg-zinc-900 border-t border-zinc-800 py-6">
           <div className="flex flex-col gap-4 px-8 text-lg">
             <Link href="/metamask" onClick={() => setMenuOpen(false)} className={`py-3 px-5 rounded-2xl ${isActive('/metamask') ? 'bg-blue-600 text-white' : 'hover:bg-zinc-800'}`}> .MetaMask </Link>
-            <Link href="/pay" onClick={() => setMenuOpen(false)} className={`py-3 px-5 rounded-2xl ${isActive('/pay') ? 'bg-blue-600 text-white' : 'hover:bg-zinc-800'}`}> .Pay </Link>
-            <Link href="/grok" onClick={() => setMenuOpen(false)} className={`py-3 px-5 rounded-2xl ${isActive('/grok') ? 'bg-blue-600 text-white' : 'hover:bg-zinc-800'}`}> .Grok AI </Link>
+            <Link href="/buy" onClick={() => setMenuOpen(false)} className={`py-3 px-5 rounded-2xl ${isActive('/buy') ? 'bg-blue-600 text-white' : 'hover:bg-zinc-800'}`}> .Buy </Link>
+            <Link href="/grokoracle" onClick={() => setMenuOpen(false)} className={`py-3 px-5 rounded-2xl ${isActive('/grokoracle') ? 'bg-blue-600 text-white' : 'hover:bg-zinc-800'}`}> .GROKoracle </Link>
             <Link href="/chat" onClick={() => setMenuOpen(false)} className={`py-3 px-5 rounded-2xl ${isActive('/chat') ? 'bg-blue-600 text-white' : 'hover:bg-zinc-800'}`}> .Chat </Link>
             <Link href="/dns" onClick={() => setMenuOpen(false)} className={`py-3 px-5 rounded-2xl ${isActive('/dns') ? 'bg-blue-600 text-white' : 'hover:bg-zinc-800'}`}> .DNS </Link>
             <Link href="/bdagscan" onClick={() => setMenuOpen(false)} className={`py-3 px-5 rounded-2xl ${isActive('/bdagscan') ? 'bg-blue-600 text-white' : 'hover:bg-zinc-800'}`}> .BdagScan </Link>
