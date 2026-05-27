@@ -31,14 +31,13 @@ export default function MetaMaskPage() {
   const handleDisconnect = () => disconnect();
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white pt-20 pb-12">
-      <div className="max-w-2xl mx-auto px-6">
-        {/* Responsive heading */}
-        <h1 className="text-4xl md:text-5xl font-bold mb-2 text-center">MAUI.MetaMask</h1>
-        <p className="text-blue-400 text-lg md:text-xl text-center mb-12">Your BlockDAG Wallet Dashboard</p>
+    <div className="min-h-screen bg-zinc-950 text-white pt-20 pb-12 px-4">
+      <div className="max-w-2xl mx-auto text-center">
+        <h1>MAUI.MetaMask</h1>
+        <p className="page-subtitle">Your BlockDAG Wallet Dashboard</p>
 
         {!isConnected ? (
-          <div className="flex justify-center">
+          <div className="flex justify-center mt-12">
             <ConnectButton 
               label="Connect Wallet"
               showBalance={false}
@@ -46,7 +45,7 @@ export default function MetaMaskPage() {
           </div>
         ) : (
           <>
-            <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 mb-8">
+            <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 mt-12">
               <div className="flex justify-between items-center mb-8">
                 <p className="text-emerald-400 font-medium">CONNECTED ON BLOCKDAG</p>
                 <button 
@@ -72,8 +71,8 @@ export default function MetaMaskPage() {
               </div>
             </div>
 
-            <Link href="/metamask/buy">
-              <div className="mb-8 bg-zinc-900 border border-zinc-700 hover:border-amber-500 rounded-3xl p-8 cursor-pointer transition-all flex items-center justify-between">
+            <Link href="/metamask/buy" className="block mt-8">
+              <div className="bg-zinc-900 border border-zinc-700 hover:border-amber-500 rounded-3xl p-8 cursor-pointer transition-all flex items-center justify-between">
                 <div>
                   <div className="text-5xl mb-4">🔄</div>
                   <h3 className="text-2xl font-semibold">Buy BDAG</h3>
@@ -83,7 +82,7 @@ export default function MetaMaskPage() {
               </div>
             </Link>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 mt-8">
               <button className="bg-emerald-600 hover:bg-emerald-500 py-8 rounded-3xl text-lg font-medium">Send</button>
               <button className="bg-zinc-800 hover:bg-zinc-700 py-8 rounded-3xl text-lg font-medium">Swap</button>
             </div>
