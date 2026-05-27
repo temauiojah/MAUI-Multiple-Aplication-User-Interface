@@ -3,7 +3,7 @@ import { blockDAGMainnet } from './chains';
 
 export const config = getDefaultConfig({
   appName: 'MAUI — Multiple Application User Interface',
-  projectId: 'YOUR_WALLET_CONNECT_PROJECT_ID',   // ←←← Replace this (see note below)
+  projectId: '5749b581bcaad6daa175fef0cf3f3d57', 
   chains: [blockDAGMainnet],
   ssr: true,
 });
