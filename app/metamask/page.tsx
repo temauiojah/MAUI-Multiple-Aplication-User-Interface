@@ -3,6 +3,7 @@
 import { useAccount, useDisconnect, useBalance, useReadContract } from 'wagmi';
 import { blockDAGMainnet } from '@/lib/chains';
 import { formatUnits } from 'viem';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 import Link from 'next/link';
 
 const MAUI_TOKEN_ADDRESS = '0xe584D0963949d90C30Db7F9128765749510c67F6';
@@ -27,18 +28,6 @@ export default function MetaMaskPage() {
   const formattedBdag = bdagBalance ? parseFloat(formatUnits(bdagBalance.value, 18)).toFixed(4) : '0.0000';
   const formattedMaui = mauiRaw ? parseFloat(formatUnits(mauiRaw as bigint, 18)).toFixed(2) : '0.00';
 
-  const handleConnect = async () => {
-    if (!(window as any).ethereum) {
-      alert("MetaMask not detected!");
-      return;
-    }
-    try {
-      await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
-    } catch (err: any) {
-      alert("Error: " + err.message);
-    }
-  };
-
   const handleDisconnect = () => disconnect();
 
   return (
@@ -48,12 +37,12 @@ export default function MetaMaskPage() {
         <p className="text-center text-zinc-400 mb-12">Your BlockDAG Wallet Dashboard</p>
 
         {!isConnected ? (
-          <button 
-            onClick={handleConnect}
-            className="w-full bg-blue-600 hover:bg-blue-700 py-6 rounded-3xl text-xl font-medium"
-          >
-            Connect MetaMask
-          </button>
+          <div className="flex justify-center">
+            <ConnectButton 
+              label="Connect Wallet"
+              showBalance={false}
+            />
+          </div>
         ) : (
           <>
             <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 mb-8">
@@ -82,19 +71,16 @@ export default function MetaMaskPage() {
               </div>
             </div>
 
-            {/* Buy MAUI card - now clearly under MetaMask */}
-            <div className="mb-8">
-              <Link href="/metamask/buy">
-                <div className="bg-zinc-900 border border-zinc-700 hover:border-emerald-500 rounded-3xl p-8 cursor-pointer transition-all flex items-center justify-between">
-                  <div>
-                    <div className="text-5xl mb-4">💳</div>
-                    <h3 className="text-2xl font-semibold">Buy MAUI</h3>
-                    <p className="text-zinc-400">Credit card or swap via MetaMask</p>
-                  </div>
-                  <span className="text-5xl text-emerald-400">→</span>
+            <Link href="/metamask/buy">
+              <div className="mb-8 bg-zinc-900 border border-zinc-700 hover:border-amber-500 rounded-3xl p-8 cursor-pointer transition-all flex items-center justify-between">
+                <div>
+                  <div className="text-5xl mb-4">🔄</div>
+                  <h3 className="text-2xl font-semibold">Buy BDAG</h3>
+                  <p className="text-zinc-400">Official BlockDAG on-ramp</p>
                 </div>
-              </Link>
-            </div>
+                <span className="text-5xl text-amber-400">→</span>
+              </div>
+            </Link>
 
             <div className="grid grid-cols-2 gap-4">
               <button className="bg-emerald-600 hover:bg-emerald-500 py-8 rounded-3xl text-lg font-medium">Send</button>
