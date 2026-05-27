@@ -33,8 +33,9 @@ export default function MetaMaskPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-white pt-20 pb-12">
       <div className="max-w-2xl mx-auto px-6">
-        <h1 className="text-5xl font-bold mb-2 text-center">MAUI.MetaMask</h1>
-        <p className="text-center text-zinc-400 mb-12">Your BlockDAG Wallet Dashboard</p>
+        {/* Responsive heading */}
+        <h1 className="text-4xl md:text-5xl font-bold mb-2 text-center">MAUI.MetaMask</h1>
+        <p className="text-blue-400 text-lg md:text-xl text-center mb-12">Your BlockDAG Wallet Dashboard</p>
 
         {!isConnected ? (
           <div className="flex justify-center">
@@ -59,13 +60,13 @@ export default function MetaMaskPage() {
               <div className="space-y-10">
                 <div className="text-center border-b border-zinc-700 pb-8">
                   <p className="text-sm text-zinc-400 mb-1">BDAG Balance</p>
-                  <p className="text-6xl font-bold tracking-tighter text-white">{formattedBdag}</p>
+                  <p className="text-5xl md:text-6xl font-bold tracking-tighter text-white">{formattedBdag}</p>
                   <p className="text-emerald-400 text-2xl">BDAG</p>
                 </div>
 
                 <div className="text-center">
                   <p className="text-sm text-zinc-400 mb-1">MAUI Balance</p>
-                  <p className="text-6xl font-bold tracking-tighter text-blue-400">{formattedMaui}</p>
+                  <p className="text-5xl md:text-6xl font-bold tracking-tighter text-blue-400">{formattedMaui}</p>
                   <p className="text-blue-400 text-2xl">MAUI</p>
                 </div>
               </div>
