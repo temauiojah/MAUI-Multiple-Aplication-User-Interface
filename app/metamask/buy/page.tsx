@@ -10,8 +10,7 @@ export default function BuyPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-white pt-20 pb-12 px-4">
       <div className="max-w-2xl mx-auto">
-        {/* Responsive heading */}
-        <h1 className="text-4xl md:text-5xl font-bold mb-3 text-center">MAUI.MetaMask.Buy</h1>
+        <h1 className="text-4xl md:text-5xl font-bold mb-2 text-center">MAUI.MetaMask.Buy</h1>
         <p className="text-blue-400 text-lg md:text-xl text-center mb-12">Buy BDAG • Then Swap for MAUI</p>
 
         <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-10 text-center">
