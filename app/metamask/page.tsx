@@ -29,13 +29,13 @@ export default function MetaMaskPage() {
 
   const handleConnect = async () => {
     if (!(window as any).ethereum) {
-      alert("MetaMask not detected!");
+      alert("MetaMask not detected! Please make sure MetaMask is installed and unlocked.");
       return;
     }
     try {
       await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
     } catch (err: any) {
-      alert("Error: " + err.message);
+      alert("Error connecting to MetaMask: " + err.message);
     }
   };
 
