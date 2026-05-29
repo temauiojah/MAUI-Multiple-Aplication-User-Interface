@@ -9,6 +9,7 @@ export const config = getDefaultConfig({
   chains: [blockDAGMainnet, mainnet],
   transports: {
     [blockDAGMainnet.id]: http(),
+    [mainnet.id]: http(),
   },
   ssr: true,
 });
