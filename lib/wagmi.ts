@@ -1,3 +1,4 @@
+// FORCE VERCEL REBUILD — May 29 2026
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
 import { connectorsForWallets } from '@rainbow-me/rainbowkit';
 import { metaMaskWallet } from '@rainbow-me/rainbowkit/wallets';
