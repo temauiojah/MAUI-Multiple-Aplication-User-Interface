@@ -28,6 +28,6 @@ export const config = getDefaultConfig({
     [blockDAGMainnet.id]: http(),
     [mainnet.id]: http(),
   },
-  connectors,        // ← Only MetaMask will appear
+  connectors,        // ← Only MetaMask
   ssr: true,
 });
