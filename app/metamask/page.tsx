@@ -4,6 +4,7 @@ import { useAccount, useDisconnect, useBalance, useReadContract } from 'wagmi';
 import { blockDAGMainnet } from '@/lib/chains';
 import { formatUnits } from 'viem';
 import Link from 'next/link';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 const MAUI_TOKEN_ADDRESS = '0xe584D0963949d90C30Db7F9128765749510c67F6';
 
@@ -27,18 +28,6 @@ export default function MetaMaskPage() {
   const formattedBdag = bdagBalance ? parseFloat(formatUnits(bdagBalance.value, 18)).toFixed(4) : '0.0000';
   const formattedMaui = mauiRaw ? parseFloat(formatUnits(mauiRaw as bigint, 18)).toFixed(2) : '0.00';
 
-  const handleConnect = async () => {
-    if (!(window as any).ethereum) {
-      alert("MetaMask not detected! Please make sure MetaMask is installed and unlocked.");
-      return;
-    }
-    try {
-      await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
-    } catch (err: any) {
-      alert("Error connecting to MetaMask: " + err.message);
-    }
-  };
-
   const handleDisconnect = () => disconnect();
 
   return (
@@ -48,12 +37,9 @@ export default function MetaMaskPage() {
         <p className="page-subtitle text-center mb-12">Your BlockDAG Wallet Dashboard</p>
 
         {!isConnected ? (
-          <button 
-            onClick={handleConnect}
-            className="w-full bg-blue-600 hover:bg-blue-700 py-6 rounded-3xl text-xl font-medium"
-          >
-            Connect MetaMask
-          </button>
+          <div className="flex justify-center">
+            <ConnectButton />   {/* ← BIG centered RainbowKit button exactly like BlockDAG's clean mobile flow */}
+          </div>
         ) : (
           <>
             <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 mb-8">
@@ -85,7 +71,7 @@ export default function MetaMaskPage() {
             <Link href="/metamask/buy">
               <div className="mb-8 bg-zinc-900 border border-zinc-700 hover:border-amber-500 rounded-3xl p-8 cursor-pointer transition-all flex items-center justify-between">
                 <div>
-                  <div className="text-5xl mb-4">🔄</div>
+                  <div className="text-5xl mb-4">Refresh</div>
                   <h3 className="text-2xl font-semibold">Buy BDAG</h3>
                   <p className="text-zinc-400">Official BlockDAG on-ramp</p>
                 </div>
