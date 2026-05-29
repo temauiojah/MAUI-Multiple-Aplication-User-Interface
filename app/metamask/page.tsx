@@ -27,7 +27,20 @@ export default function MetaMaskPage() {
   const formattedBdag = bdagBalance ? parseFloat(formatUnits(bdagBalance.value, 18)).toFixed(4) : '0.0000';
   const formattedMaui = mauiRaw ? parseFloat(formatUnits(mauiRaw as bigint, 18)).toFixed(2) : '0.00';
 
-  const handleDisconnect = () => disconnect();
+  // ← IMPROVED DISCONNECT (full mobile cleanup)
+  const handleDisconnect = () => {
+    disconnect();
+    // Clear any lingering WalletConnect / MetaMask sessions
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('wagmi.wallet');
+      localStorage.removeItem('walletconnect');
+      localStorage.removeItem('-walletconnect-');
+    }
+    // Small delay + reload ensures clean state on mobile
+    setTimeout(() => {
+      window.location.reload();
+    }, 300);
+  };
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white pt-20 pb-12">
@@ -37,15 +50,15 @@ export default function MetaMaskPage() {
 
         {!isConnected ? (
           <div className="flex justify-center">
-            <ConnectButton /> {/* ← BIG centered RainbowKit button exactly like BlockDAG's clean mobile flow */}
+            <ConnectButton /> {/* ← BIG centered RainbowKit button */}
           </div>
         ) : (
           <>
             <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 mb-8">
               <div className="flex justify-between items-center mb-8">
                 <p className="text-emerald-400 font-medium">CONNECTED ON BLOCKDAG</p>
-                <button 
-                  onClick={handleDisconnect} 
+                <button
+                  onClick={handleDisconnect}
                   className="text-sm bg-red-600 hover:bg-red-700 px-5 py-2 rounded-2xl"
                 >
                   Disconnect
@@ -53,14 +66,11 @@ export default function MetaMaskPage() {
               </div>
 
               <div className="space-y-10">
-                {/* BDAG Balance - Mobile responsive */}
                 <div className="text-center border-b border-zinc-700 pb-8">
                   <p className="text-sm text-zinc-400 mb-1">BDAG Balance</p>
                   <p className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter text-white break-all leading-none">{formattedBdag}</p>
                   <p className="text-emerald-400 text-2xl">BDAG</p>
                 </div>
-
-                {/* MAUI Balance - Mobile responsive (this was overflowing) */}
                 <div className="text-center">
                   <p className="text-sm text-zinc-400 mb-1">MAUI Balance</p>
                   <p className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter text-blue-400 break-all leading-none">{formattedMaui}</p>
