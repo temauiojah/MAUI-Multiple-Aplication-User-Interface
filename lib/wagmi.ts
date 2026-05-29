@@ -1,27 +1,34 @@
+// FORCE VERCEL REBUILD — May 29 2026 v2
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
-import { metaMask } from 'wagmi/connectors';
+import { connectorsForWallets } from '@rainbow-me/rainbowkit';
+import { metaMaskWallet } from '@rainbow-me/rainbowkit/wallets';
 import { http } from 'viem';
 import { mainnet } from 'wagmi/chains';
 import { blockDAGMainnet } from './chains';
 
+const projectId = '5749b581bcaad6daa175fef0cf3f3d57';
+
+const connectors = connectorsForWallets(
+  [
+    {
+      groupName: 'Recommended',
+      wallets: [metaMaskWallet],
+    },
+  ],
+  {
+    projectId,
+    appName: 'MAUI — Multiple Application User Interface',
+  }
+);
+
 export const config = getDefaultConfig({
   appName: 'MAUI — Multiple Application User Interface',
-  projectId: '5749b581bcaad6daa175fef0cf3f3d57',
+  projectId,
   chains: [blockDAGMainnet, mainnet],
   transports: {
     [blockDAGMainnet.id]: http(),
     [mainnet.id]: http(),
   },
+  connectors,        // ← ONLY MetaMask
   ssr: true,
-
-  // Only MetaMask (stable on Vercel)
-  connectors: [
-    metaMask({
-      dappMetadata: {
-        name: 'MAUI — Multiple Application User Interface',
-        url: 'https://maui-coin.vercel.app',
-        iconUrl: 'https://maui-coin.vercel.app/favicon.ico',
-      },
-    }),
-  ],
 });
