@@ -1,5 +1,4 @@
 'use client';
-
 import { useAccount, useDisconnect, useBalance, useReadContract } from 'wagmi';
 import { blockDAGMainnet } from '@/lib/chains';
 import { formatUnits } from 'viem';
@@ -38,7 +37,7 @@ export default function MetaMaskPage() {
 
         {!isConnected ? (
           <div className="flex justify-center">
-            <ConnectButton />   {/* ← BIG centered RainbowKit button exactly like BlockDAG's clean mobile flow */}
+            <ConnectButton /> {/* ← BIG centered RainbowKit button exactly like BlockDAG's clean mobile flow */}
           </div>
         ) : (
           <>
@@ -54,15 +53,17 @@ export default function MetaMaskPage() {
               </div>
 
               <div className="space-y-10">
+                {/* BDAG Balance - Mobile responsive */}
                 <div className="text-center border-b border-zinc-700 pb-8">
                   <p className="text-sm text-zinc-400 mb-1">BDAG Balance</p>
-                  <p className="text-5xl md:text-6xl font-bold tracking-tighter text-white">{formattedBdag}</p>
+                  <p className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter text-white break-all leading-none">{formattedBdag}</p>
                   <p className="text-emerald-400 text-2xl">BDAG</p>
                 </div>
 
+                {/* MAUI Balance - Mobile responsive (this was overflowing) */}
                 <div className="text-center">
                   <p className="text-sm text-zinc-400 mb-1">MAUI Balance</p>
-                  <p className="text-5xl md:text-6xl font-bold tracking-tighter text-blue-400">{formattedMaui}</p>
+                  <p className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter text-blue-400 break-all leading-none">{formattedMaui}</p>
                   <p className="text-blue-400 text-2xl">MAUI</p>
                 </div>
               </div>
