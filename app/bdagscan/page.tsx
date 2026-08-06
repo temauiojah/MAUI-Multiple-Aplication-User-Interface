@@ -1,4 +1,5 @@
 'use client';
+
 import { useAccount, useReadContract, useBalance, useSwitchChain, useChainId } from 'wagmi';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -7,14 +8,13 @@ export default function BdagScanPage() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
-  
+
   const explorerBase = 'https://bdagscan.com';
   const MAUI_CONTRACT = '0xe584D0963949d90C30Db7F9128765749510c67F6' as const;
   const BLOCKDAG_CHAIN_ID = 1404;
 
   const openInNewTab = (url: string) => window.open(url, '_blank', 'noopener,noreferrer');
 
-  // Minimal ERC20 ABI (only the functions we need)
   const erc20Abi = [
     {
       constant: true,
@@ -54,7 +54,6 @@ export default function BdagScanPage() {
     },
   ] as const;
 
-  // Fetch token metadata
   const { data: name } = useReadContract({
     address: MAUI_CONTRACT,
     abi: erc20Abi,
@@ -83,7 +82,6 @@ export default function BdagScanPage() {
     chainId: BLOCKDAG_CHAIN_ID,
   });
 
-  // User's MAUI balance (if wallet connected)
   const { data: mauiBalance } = useBalance({
     address,
     token: MAUI_CONTRACT,
@@ -91,7 +89,6 @@ export default function BdagScanPage() {
     query: { enabled: isConnected && chainId === BLOCKDAG_CHAIN_ID },
   });
 
-  // Search state
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleSearch = (e: React.FormEvent) => {
@@ -101,33 +98,34 @@ export default function BdagScanPage() {
     }
   };
 
-  // Quick link helpers
   const contractOverviewUrl = `${explorerBase}/contractOverview/${MAUI_CONTRACT}`;
-  const tokenTransfersUrl = `${explorerBase}/token/${MAUI_CONTRACT}/transfers`; // Adjust path if bdagscan uses different route
-  const tokenHoldersUrl = `${explorerBase}/token/${MAUI_CONTRACT}/holders`;     // Adjust path if needed
+  const tokenTransfersUrl = `${explorerBase}/token/${MAUI_CONTRACT}/transfers`;
+  const tokenHoldersUrl = `${explorerBase}/token/${MAUI_CONTRACT}/holders`;
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white pt-20 pb-12 px-4">
       <div className="max-w-6xl mx-auto">
-        {/* Hero / Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold tracking-tighter bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+        {/* Hero */}
+        <div className="text-center mb-10 md:mb-12">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tighter bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
             MAUI.bdagscan
           </h1>
-          <p className="page-subtitle text-xl text-zinc-400 mt-2">
+          <p className="page-subtitle text-base sm:text-lg md:text-xl text-zinc-400 mt-2">
             Official BlockDAG Explorer • Powered by MAUI
           </p>
-          <p className="text-sm text-zinc-500 mt-1">
+          <p className="text-xs sm:text-sm text-zinc-500 mt-1">
             Real-time data for the MAUI ecosystem on BlockDAG (Chain ID: 1404)
           </p>
         </div>
 
-        {/* Network Status & Switch */}
+        {/* Network Status */}
         <div className="flex justify-center mb-8">
-          <div className="inline-flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-2xl px-6 py-3">
+          <div className="inline-flex flex-wrap items-center justify-center gap-2 sm:gap-3 bg-zinc-900 border border-zinc-800 rounded-2xl px-4 sm:px-6 py-3">
             <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
-            <span className="text-sm font-medium">
-              {chainId === BLOCKDAG_CHAIN_ID ? '✅ Connected to BlockDAG Mainnet' : '🔌 Not on BlockDAG'}
+            <span className="text-sm font-medium text-center">
+              {chainId === BLOCKDAG_CHAIN_ID
+                ? 'Connected to BlockDAG Mainnet'
+                : 'Not on BlockDAG'}
             </span>
             {isConnected && chainId !== BLOCKDAG_CHAIN_ID && (
               <button
@@ -140,59 +138,65 @@ export default function BdagScanPage() {
           </div>
         </div>
 
-        {/* Search Bar */}
-        <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-12">
-          <div className="relative">
+        {/* Search Bar – stacks on mobile */}
+        <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-10 md:mb-12">
+          <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by address, tx hash, block number, or token..."
-              className="w-full bg-zinc-900 border border-zinc-700 focus:border-purple-500 rounded-3xl px-8 py-5 text-lg outline-none placeholder:text-zinc-500"
+              placeholder="Search address, tx, block..."
+              className="flex-1 w-full bg-zinc-900 border border-zinc-700 focus:border-purple-500 rounded-2xl sm:rounded-3xl px-5 py-4 text-base outline-none placeholder:text-zinc-500"
             />
             <button
               type="submit"
-              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white text-zinc-950 px-8 py-3 rounded-2xl font-semibold hover:bg-purple-400 hover:text-white transition"
+              className="w-full sm:w-auto bg-white text-zinc-950 px-6 py-4 rounded-2xl sm:rounded-3xl font-semibold hover:bg-purple-400 hover:text-white transition whitespace-nowrap"
             >
               Search on BDAG
             </button>
           </div>
         </form>
 
-        {/* MAUI Token Overview Card */}
+        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
-          <div className="lg:col-span-2 bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
-            <div className="flex items-center justify-between mb-6">
+          {/* Token Overview Card */}
+          <div className="lg:col-span-2 bg-zinc-900 border border-zinc-800 rounded-3xl p-5 sm:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
               <div>
-                <h2 className="text-3xl font-semibold">{name || 'MAUI Token'}</h2>
-                <p className="text-purple-400 text-xl font-mono">{symbol || 'MAUI'}</p>
+                <h2 className="text-2xl sm:text-3xl font-semibold">{name || 'MAUI Token'}</h2>
+                <p className="text-purple-400 text-lg sm:text-xl font-mono">{symbol || 'MAUI'}</p>
               </div>
               <button
                 onClick={() => openInNewTab(contractOverviewUrl)}
-                className="px-6 py-3 bg-white text-zinc-950 rounded-2xl font-semibold flex items-center gap-2 hover:bg-purple-400 hover:text-white transition"
+                className="w-full sm:w-auto px-5 py-3 bg-white text-zinc-950 rounded-2xl font-semibold text-sm sm:text-base hover:bg-purple-400 hover:text-white transition"
               >
-                View Full Contract on bdagscan →
+                View Full Contract →
               </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-6">
+            {/* Stats – 1 col on mobile, 3 on larger */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <div>
                 <p className="text-xs text-zinc-500 uppercase tracking-widest">Total Supply</p>
-                <p className="text-3xl font-mono mt-1">
+                <p className="text-2xl sm:text-3xl font-mono mt-1 break-all">
                   {totalSupply
-                    ? Number(totalSupply) / 10 ** (decimals || 18)
+                    ? (Number(totalSupply) / 10 ** (decimals || 18)).toLocaleString()
                     : '2,000,000,000'}
                 </p>
                 <p className="text-sm text-zinc-400">{symbol || 'MAUI'}</p>
               </div>
+
               <div>
                 <p className="text-xs text-zinc-500 uppercase tracking-widest">Contract</p>
-                <p className="font-mono text-sm break-all mt-1 text-purple-300">{MAUI_CONTRACT}</p>
+                <p className="font-mono text-xs sm:text-sm break-all mt-1 text-purple-300">
+                  {MAUI_CONTRACT}
+                </p>
               </div>
+
               <div>
                 <p className="text-xs text-zinc-500 uppercase tracking-widest">Your Balance</p>
                 {isConnected ? (
-                  <p className="text-3xl font-mono mt-1">
+                  <p className="text-2xl sm:text-3xl font-mono mt-1">
                     {mauiBalance
                       ? Number(mauiBalance.formatted).toLocaleString()
                       : '0.00'}{' '}
@@ -205,10 +209,10 @@ export default function BdagScanPage() {
             </div>
           </div>
 
-          {/* Quick Links Sidebar */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 flex flex-col">
+          {/* Quick Links */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-5 sm:p-8 flex flex-col">
             <h3 className="uppercase text-xs tracking-widest text-zinc-400 mb-4">MAUI Quick Links</h3>
-            
+
             <div className="space-y-3 flex-1">
               <a
                 href={contractOverviewUrl}
@@ -219,7 +223,7 @@ export default function BdagScanPage() {
                 <span>Contract Overview</span>
                 <span className="text-xs text-zinc-400">→</span>
               </a>
-              
+
               <a
                 href={tokenTransfersUrl}
                 target="_blank"
@@ -229,7 +233,7 @@ export default function BdagScanPage() {
                 <span>Token Transfers</span>
                 <span className="text-xs text-zinc-400">→</span>
               </a>
-              
+
               <a
                 href={tokenHoldersUrl}
                 target="_blank"
@@ -239,7 +243,7 @@ export default function BdagScanPage() {
                 <span>Top Holders</span>
                 <span className="text-xs text-zinc-400">→</span>
               </a>
-              
+
               <a
                 href={`${explorerBase}/token`}
                 target="_blank"
@@ -252,47 +256,52 @@ export default function BdagScanPage() {
             </div>
 
             <div className="mt-auto pt-6 border-t border-zinc-700 text-xs text-zinc-500">
-              Data fetched live from BlockDAG RPC • 
+              Data fetched live from BlockDAG RPC
               <br />
-              <span className="font-mono">{MAUI_CONTRACT}</span>
+              <span className="font-mono break-all">{MAUI_CONTRACT}</span>
             </div>
           </div>
         </div>
 
-        {/* Full Explorer Links Section */}
+        {/* Full Explorer Links */}
         <div className="text-center">
-          <p className="text-zinc-400 mb-4">Explore more on the official BlockDAG Explorer</p>
-          <div className="flex flex-wrap justify-center gap-4">
+          <p className="text-zinc-400 mb-4 text-sm sm:text-base">
+            Explore more on the official BlockDAG Explorer
+          </p>
+          <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
             <button
               onClick={() => openInNewTab(explorerBase)}
-              className="px-8 py-4 bg-zinc-900 hover:bg-white hover:text-zinc-950 border border-zinc-700 rounded-3xl font-medium transition"
+              className="px-6 py-3.5 sm:px-8 sm:py-4 bg-zinc-900 hover:bg-white hover:text-zinc-950 border border-zinc-700 rounded-2xl sm:rounded-3xl font-medium transition text-sm sm:text-base"
             >
               Home
             </button>
             <button
               onClick={() => openInNewTab(`${explorerBase}/blocks`)}
-              className="px-8 py-4 bg-zinc-900 hover:bg-white hover:text-zinc-950 border border-zinc-700 rounded-3xl font-medium transition"
+              className="px-6 py-3.5 sm:px-8 sm:py-4 bg-zinc-900 hover:bg-white hover:text-zinc-950 border border-zinc-700 rounded-2xl sm:rounded-3xl font-medium transition text-sm sm:text-base"
             >
               Latest Blocks
             </button>
             <button
               onClick={() => openInNewTab(`${explorerBase}/tx`)}
-              className="px-8 py-4 bg-zinc-900 hover:bg-white hover:text-zinc-950 border border-zinc-700 rounded-3xl font-medium transition"
+              className="px-6 py-3.5 sm:px-8 sm:py-4 bg-zinc-900 hover:bg-white hover:text-zinc-950 border border-zinc-700 rounded-2xl sm:rounded-3xl font-medium transition text-sm sm:text-base"
             >
               Latest Transactions
             </button>
             <button
               onClick={() => openInNewTab(`${explorerBase}/topAccounts`)}
-              className="px-8 py-4 bg-zinc-900 hover:bg-white hover:text-zinc-950 border border-zinc-700 rounded-3xl font-medium transition"
+              className="px-6 py-3.5 sm:px-8 sm:py-4 bg-zinc-900 hover:bg-white hover:text-zinc-950 border border-zinc-700 rounded-2xl sm:rounded-3xl font-medium transition text-sm sm:text-base"
             >
               Top Accounts
             </button>
           </div>
         </div>
 
-        <div className="text-center text-xs text-zinc-500 mt-16">
-          MAUI.bdagscan • Built for the MAUI ecosystem • 
-          <Link href="https://github.com/temauiojah/MAUI-Multiple-Aplication-User-Interface" className="underline hover:text-white">
+        <div className="text-center text-xs text-zinc-500 mt-12 sm:mt-16">
+          MAUI.bdagscan • Built for the MAUI ecosystem •{' '}
+          <Link
+            href="https://github.com/temauiojah/MAUI-Multiple-Aplication-User-Interface"
+            className="underline hover:text-white"
+          >
             View repo
           </Link>
         </div>
