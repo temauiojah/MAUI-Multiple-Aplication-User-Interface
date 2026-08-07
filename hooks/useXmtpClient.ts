@@ -31,20 +31,10 @@ export function useXmtpClient() {
 
     try {
       const signer = createXmtpSigner(address, walletClient);
-
-      // Default is already 'dev'
       const xmtpClient = await Client.create(signer);
 
       setClient(xmtpClient);
       setStatus('ready');
-
-      // TEMP DEBUG – remove later
-      (window as any).__XMTP_CLIENT = xmtpClient;
-      console.log('XMTP client ready. Conversation methods:', Object.keys(xmtpClient.conversations));
-      console.log('typeof newDm:', typeof xmtpClient.conversations.newDm);
-      console.log('typeof createDm:', typeof xmtpClient.conversations.createDm);
-      console.log('typeof newDmWithIdentifier:', typeof xmtpClient.conversations.newDmWithIdentifier);
-      console.log('typeof findOrCreateDm:', typeof xmtpClient.conversations.findOrCreateDm);
     } catch (err: any) {
       console.error('XMTP init error:', err);
       setError(err?.message || 'Failed to initialize XMTP');
