@@ -28,11 +28,14 @@ function extractContent(raw: any): string {
   if (typeof raw.text === 'string') return raw.text;
   if (raw.content?.text) return String(raw.content.text);
   if (raw.content?.content) return String(raw.content.content);
-  try {
-    return JSON.stringify(raw);
-  } catch {
-    return '[unsupported message]';
-  }
+  return '';
+}
+
+function isRealTextMessage(content: string): boolean {
+  if (!content || content.trim() === '') return false;
+  // Filter out system / membership JSON messages
+  if (content.startsWith('{') || content.startsWith('[')) return false;
+  return true;
 }
 
 export default function ChatPage() {
@@ -59,9 +62,15 @@ export default function ChatPage() {
 
       const mapped: Conversation[] = convos.map((c: any) => {
         let peer = 'Unknown';
-        if (typeof c.peerAddress === 'string') peer = c.peerAddress;
-        else if (typeof c.peerInboxId === 'string') peer = c.peerInboxId;
-        else if (c.peerAddress?.identifier) peer = c.peerAddress.identifier;
+
+        // Try several ways to get a readable peer identifier
+        if (typeof c.peerAddress === 'string' && c.peerAddress.startsWith('0x')) {
+          peer = c.peerAddress;
+        } else if (c.peerAddress?.identifier) {
+          peer = c.peerAddress.identifier;
+        } else if (typeof c.peerInboxId === 'string') {
+          peer = c.peerInboxId.slice(0, 10) + '…';
+        }
 
         return { id: c.id, peerAddress: peer, _raw: c };
       });
@@ -86,14 +95,16 @@ export default function ChatPage() {
       try {
         const existing = await activeConv!._raw.messages();
         if (!cancelled) {
-          setMessages(
-            existing.map((m: any) => ({
+          const textMessages = existing
+            .map((m: any) => ({
               id: m.id,
               content: extractContent(m.content ?? m),
               senderAddress: m.senderAddress ?? m.senderInboxId ?? 'unknown',
               sentAt: m.sentAt ?? new Date(),
             }))
-          );
+            .filter((m: Message) => isRealTextMessage(m.content));
+
+          setMessages(textMessages);
         }
 
         const stream = await activeConv!._raw.stream();
@@ -101,11 +112,15 @@ export default function ChatPage() {
 
         for await (const msg of stream) {
           if (cancelled) break;
+
+          const content = extractContent(msg.content ?? msg);
+          if (!isRealTextMessage(content)) continue;
+
           setMessages((prev) => [
             ...prev,
             {
               id: msg.id,
-              content: extractContent(msg.content ?? msg),
+              content,
               senderAddress: msg.senderAddress ?? msg.senderInboxId ?? 'unknown',
               sentAt: msg.sentAt ?? new Date(),
             },
@@ -235,6 +250,7 @@ export default function ChatPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-11rem)]">
+          {/* Sidebar */}
           <div className="bg-zinc-900 border border-zinc-700 rounded-3xl flex flex-col overflow-hidden">
             <div className="p-4 border-b border-zinc-700">
               <p className="text-sm font-medium text-zinc-300 mb-3">New conversation</p>
@@ -272,7 +288,7 @@ export default function ChatPage() {
                   }`}
                 >
                   <span className="font-mono">
-                    {typeof c.peerAddress === 'string' && c.peerAddress.length > 10
+                    {typeof c.peerAddress === 'string' && c.peerAddress.startsWith('0x')
                       ? `${c.peerAddress.slice(0, 6)}…${c.peerAddress.slice(-4)}`
                       : c.peerAddress || 'Unknown'}
                   </span>
@@ -281,6 +297,7 @@ export default function ChatPage() {
             </div>
           </div>
 
+          {/* Chat area */}
           <div className="md:col-span-2 bg-zinc-900 border border-zinc-700 rounded-3xl flex flex-col overflow-hidden">
             {!activeConv ? (
               <div className="flex-1 flex items-center justify-center text-zinc-500">
@@ -290,7 +307,8 @@ export default function ChatPage() {
               <>
                 <div className="px-5 py-4 border-b border-zinc-700 flex items-center justify-between">
                   <span className="font-mono text-sm text-blue-400">
-                    {typeof activeConv.peerAddress === 'string' && activeConv.peerAddress.length > 10
+                    {typeof activeConv.peerAddress === 'string' &&
+                    activeConv.peerAddress.startsWith('0x')
                       ? `${activeConv.peerAddress.slice(0, 8)}…${activeConv.peerAddress.slice(-6)}`
                       : activeConv.peerAddress || 'Conversation'}
                   </span>
@@ -304,7 +322,9 @@ export default function ChatPage() {
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
                   {messages.map((m) => {
-                    const isMe = m.senderAddress.toLowerCase() === address?.toLowerCase();
+                    const isMe =
+                      m.senderAddress.toLowerCase() === address?.toLowerCase() ||
+                      m.senderAddress.toLowerCase().includes(address?.toLowerCase().slice(2) || '');
                     return (
                       <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                         <div
@@ -315,7 +335,11 @@ export default function ChatPage() {
                           }`}
                         >
                           <p className="whitespace-pre-wrap break-words">{m.content}</p>
-                          <p className={`text-[10px] mt-1 ${isMe ? 'text-blue-200' : 'text-zinc-500'}`}>
+                          <p
+                            className={`text-[10px] mt-1 ${
+                              isMe ? 'text-blue-200' : 'text-zinc-500'
+                            }`}
+                          >
                             {new Date(m.sentAt).toLocaleTimeString()}
                           </p>
                         </div>
