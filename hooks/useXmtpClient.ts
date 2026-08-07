@@ -32,10 +32,8 @@ export function useXmtpClient() {
     try {
       const signer = createXmtpSigner(address, walletClient);
 
-      // env: 'dev' | 'production'  (use 'dev' while building)
-      const xmtpClient = await Client.create(signer, {
-        env: 'dev',
-      });
+      // Default is already 'dev' – no env option needed
+      const xmtpClient = await Client.create(signer);
 
       setClient(xmtpClient);
       setStatus('ready');
