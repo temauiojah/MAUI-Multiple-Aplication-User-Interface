@@ -98,9 +98,11 @@ export default function BdagScanPage() {
     }
   };
 
+  // Fixed: both Transfers and Holders now point to the real Contract Overview page
+  // (bdagscan.com does not have /token/.../transfers or /holders — those 404)
   const contractOverviewUrl = `${explorerBase}/contractOverview/${MAUI_CONTRACT}`;
-  const tokenTransfersUrl = `${explorerBase}/token/${MAUI_CONTRACT}/transfers`;
-  const tokenHoldersUrl = `${explorerBase}/token/${MAUI_CONTRACT}/holders`;
+  const tokenTransfersUrl = contractOverviewUrl;
+  const tokenHoldersUrl = contractOverviewUrl;
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white pt-20 pb-12 px-4">
