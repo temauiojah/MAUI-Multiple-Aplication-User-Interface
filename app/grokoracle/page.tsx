@@ -16,10 +16,10 @@ export default function GrokOraclePage() {
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/grok',
+      body: {
+        walletAddress: address ?? null,
+      },
     }),
-    body: {
-      walletAddress: address ?? null,
-    },
     initialMessages: [
       {
         id: 'welcome',
