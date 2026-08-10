@@ -75,7 +75,7 @@ export async function POST(req: Request) {
       system: SYSTEM_PROMPT,
       messages,
       temperature: 0.7,
-      maxTokens: 1024,
+      maxOutputTokens: 1024,
     });
 
     return result.toUIMessageStreamResponse();
