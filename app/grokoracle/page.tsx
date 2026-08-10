@@ -20,14 +20,6 @@ export default function GrokOraclePage() {
         walletAddress: address ?? null,
       },
     }),
-    initialMessages: [
-      {
-        id: 'welcome',
-        role: 'assistant',
-        content:
-          "Hey! I'm **GROKoracle** — your MAUI ecosystem assistant powered by Grok.\n\nAsk me anything about MAUI, BlockDAG, the wallet, chat, token utility, or how the app works.",
-      },
-    ],
   });
 
   const isLoading = status === 'submitted' || status === 'streaming';
@@ -60,6 +52,8 @@ export default function GrokOraclePage() {
     return '';
   }
 
+  const showWelcome = messages.length === 0;
+
   return (
     <div className="min-h-screen bg-zinc-950 text-white pt-20 pb-8 px-4 flex flex-col">
       <div className="max-w-3xl mx-auto w-full flex flex-col flex-1">
@@ -76,6 +70,22 @@ export default function GrokOraclePage() {
         {/* Chat card */}
         <div className="flex-1 flex flex-col bg-zinc-900 border border-zinc-700 rounded-3xl overflow-hidden min-h-[520px] max-h-[70vh]">
           <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+            {/* Static welcome message */}
+            {showWelcome && (
+              <div className="flex justify-start">
+                <div className="relative max-w-[85%] px-4 py-3 text-sm leading-relaxed bg-zinc-800 text-zinc-100 rounded-2xl rounded-bl-md border border-zinc-700">
+                  <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-violet-300">
+                    GROKoracle
+                  </div>
+                  <div className="whitespace-pre-wrap break-words">
+                    Hey! I&apos;m <strong>GROKoracle</strong> — your MAUI ecosystem assistant powered by Grok.
+                    {'\n\n'}
+                    Ask me anything about MAUI, BlockDAG, the wallet, chat, token utility, or how the app works.
+                  </div>
+                </div>
+              </div>
+            )}
+
             {messages
               .filter((m) => m.role !== 'system')
               .map((m) => (
