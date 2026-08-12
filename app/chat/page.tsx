@@ -1,7 +1,7 @@
 // app/chat/page.tsx
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { isAddress } from 'viem';
@@ -9,7 +9,6 @@ import { IdentifierKind } from '@xmtp/browser-sdk';
 import { useXmtpClient } from '@/hooks/useXmtpClient';
 import { useSearchParams } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
 
 /** Official MAUI contact address — same constant used on /contact */
 export const MAUI_CONTACT_ADDRESS =
@@ -57,7 +56,7 @@ function isOfficialContact(peer?: string) {
   );
 }
 
-export default function ChatPage() {
+function ChatPageClient() {
   const { address, isConnected } = useAccount();
   const { client, status, error, initialize, isReady } = useXmtpClient();
   const searchParams = useSearchParams();
@@ -632,3 +631,19 @@ export default function ChatPage() {
     </div>
   );
 }
+
+
+export default function ChatPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-zinc-950 text-white pt-20 pb-12 px-4 flex items-center justify-center">
+          <p className="text-zinc-400">Loading chat…</p>
+        </div>
+      }
+    >
+      <ChatPageClient />
+    </Suspense>
+  );
+}
+
