@@ -9,6 +9,8 @@ import { IdentifierKind } from '@xmtp/browser-sdk';
 import { useXmtpClient } from '@/hooks/useXmtpClient';
 import { useSearchParams } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 /** Official MAUI contact address — same constant used on /contact */
 export const MAUI_CONTACT_ADDRESS =
   '0x185E70a3A13Ed9A47Fe49029EA7Ca9a5c3624940';
