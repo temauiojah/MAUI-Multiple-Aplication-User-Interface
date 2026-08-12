@@ -63,12 +63,12 @@ export default function DnsPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-white pt-20 pb-16 px-4">
       <div className="max-w-3xl mx-auto">
-        {/* Hero */}
+        {/* Hero – standardized size/color with other MAUI pages */}
         <div className="text-center mb-10 md:mb-12">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
             MAUI.DNS
           </h1>
-          <p className="page-subtitle mt-2 text-zinc-400 text-base md:text-lg">
+          <p className="page-subtitle mt-2">
             Web3 Domain & Subdomain Manager
           </p>
           <p className="text-sm text-zinc-500 mt-3 max-w-xl mx-auto leading-relaxed">

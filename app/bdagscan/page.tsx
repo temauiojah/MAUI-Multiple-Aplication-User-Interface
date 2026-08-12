@@ -107,15 +107,15 @@ export default function BdagScanPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-white pt-20 pb-12 px-4">
       <div className="max-w-6xl mx-auto">
-        {/* Hero */}
+        {/* Hero – standardized size/color with other MAUI pages */}
         <div className="text-center mb-10 md:mb-12">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tighter bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
             MAUI.bdagscan
           </h1>
-          <p className="page-subtitle text-base sm:text-lg md:text-xl text-zinc-400 mt-2">
+          <p className="page-subtitle mt-2">
             Official BlockDAG Explorer • Powered by MAUI
           </p>
-          <p className="text-xs sm:text-sm text-zinc-500 mt-1">
+          <p className="text-xs sm:text-sm text-zinc-500 mt-2">
             Real-time data for the MAUI ecosystem on BlockDAG (Chain ID: 1404)
           </p>
         </div>
