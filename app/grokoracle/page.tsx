@@ -24,8 +24,18 @@ export default function GrokOraclePage() {
 
   const isLoading = status === 'submitted' || status === 'streaming';
 
+  // Safer scroll – only the messages container, not the whole page
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messages.length === 0) return;
+    const el = messagesEndRef.current;
+    if (!el) return;
+
+    const scrollParent = el.closest('.overflow-y-auto') as HTMLElement | null;
+    if (scrollParent) {
+      scrollParent.scrollTop = scrollParent.scrollHeight;
+    } else {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
   }, [messages, isLoading]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -57,20 +67,19 @@ export default function GrokOraclePage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-white pt-20 pb-8 px-4 flex flex-col">
       <div className="max-w-3xl mx-auto w-full flex flex-col flex-1">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+        {/* Standardized hero */}
+        <div className="text-center mb-6 md:mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
             GROKoracle
           </h1>
-          <p className="text-zinc-400 mt-2 text-sm md:text-base">
+          <p className="page-subtitle mt-2">
             AI assistant for the MAUI ecosystem • Powered by Grok
           </p>
         </div>
 
         {/* Chat card */}
-        <div className="flex-1 flex flex-col bg-zinc-900 border border-zinc-700 rounded-3xl overflow-hidden min-h-[520px] max-h-[70vh]">
+        <div className="flex-1 flex flex-col bg-zinc-900 border border-zinc-700 rounded-3xl overflow-hidden min-h-[380px] md:min-h-[520px] max-h-[calc(100dvh-11rem)]">
           <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
-            {/* Static welcome message */}
             {showWelcome && (
               <div className="flex justify-start">
                 <div className="relative max-w-[85%] px-4 py-3 text-sm leading-relaxed bg-zinc-800 text-zinc-100 rounded-2xl rounded-bl-md border border-zinc-700">
@@ -78,9 +87,11 @@ export default function GrokOraclePage() {
                     GROKoracle
                   </div>
                   <div className="whitespace-pre-wrap break-words">
-                    Hey! I&apos;m <strong>GROKoracle</strong> — your MAUI ecosystem assistant powered by Grok.
+                    Hey! I&apos;m <strong>GROKoracle</strong> — your MAUI ecosystem
+                    assistant powered by Grok.
                     {'\n\n'}
-                    Ask me anything about MAUI, BlockDAG, the wallet, chat, token utility, or how the app works.
+                    Ask me anything about MAUI, BlockDAG, the wallet, chat,
+                    token utility, or how the app works.
                   </div>
                 </div>
               </div>
@@ -171,20 +182,27 @@ export default function GrokOraclePage() {
 
             {isConnected && (
               <p className="mt-2 text-[11px] text-zinc-500 text-center">
-                Connected as {address?.slice(0, 6)}…{address?.slice(-4)} • Powered by xAI Grok
+                Connected as {address?.slice(0, 6)}…{address?.slice(-4)} •
+                Powered by xAI Grok
               </p>
             )}
           </div>
         </div>
 
         <div className="mt-6 flex flex-wrap justify-center gap-4 text-sm text-zinc-500">
-          <Link href="/metamask" className="hover:text-zinc-300 transition-colors">
+          <Link
+            href="/metamask"
+            className="hover:text-zinc-300 transition-colors"
+          >
             Wallet
           </Link>
           <Link href="/chat" className="hover:text-zinc-300 transition-colors">
             Chat
           </Link>
-          <Link href="/contact" className="hover:text-zinc-300 transition-colors">
+          <Link
+            href="/contact"
+            className="hover:text-zinc-300 transition-colors"
+          >
             Contact
           </Link>
         </div>
