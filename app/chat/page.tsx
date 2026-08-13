@@ -85,8 +85,8 @@ function ChatPageClient() {
   );
 
   // Browser tab state
-  const [browserUrl, setBrowserUrl] = useState('https://mauicoin.vercel.app');
-  const [browserInput, setBrowserInput] = useState('https://mauicoin.vercel.app');
+  const [browserUrl, setBrowserUrl] = useState('');
+  const [browserInput, setBrowserInput] = useState('');
   const [browserKey, setBrowserKey] = useState(0);
 
   const autoStartedRef = useRef(false);
@@ -494,25 +494,27 @@ function ChatPageClient() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            {notifPermission !== 'granted' && notifPermission !== 'unsupported' && (
+          {tab !== 'browser' && (
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {notifPermission !== 'granted' && notifPermission !== 'unsupported' && (
+                <button
+                  onClick={requestNotifications}
+                  className="min-h-[40px] sm:min-h-[44px] px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 transition-colors"
+                >
+                  Enable notifications
+                </button>
+              )}
+              {notifPermission === 'granted' && (
+                <span className="text-xs text-emerald-400 px-2 hidden sm:inline">Notifications on</span>
+              )}
               <button
-                onClick={requestNotifications}
-                className="min-h-[40px] sm:min-h-[44px] px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 transition-colors"
+                onClick={contactOfficial}
+                className="min-h-[40px] sm:min-h-[44px] px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 transition-colors"
               >
-                Enable notifications
+                Official Contact
               </button>
-            )}
-            {notifPermission === 'granted' && (
-              <span className="text-xs text-emerald-400 px-2 hidden sm:inline">Notifications on</span>
-            )}
-            <button
-              onClick={contactOfficial}
-              className="min-h-[40px] sm:min-h-[44px] px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 transition-colors"
-            >
-              Official Contact
-            </button>
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Tab bar – larger touch targets; fixed bottom on mobile */}
@@ -732,71 +734,59 @@ function ChatPageClient() {
 
         {/* ════════ BROWSER TAB ════════ */}
         {tab === 'browser' && (
-          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col min-h-[70dvh] sm:h-[calc(100vh-12rem)]">
-            <div className="p-3 border-b border-zinc-700 flex flex-col sm:flex-row gap-2">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col h-[calc(100dvh-8.5rem)] sm:h-[calc(100vh-12rem)]">
+            {/* Address bar only */}
+            <div className="p-2 sm:p-3 border-b border-zinc-700 flex gap-2 items-center">
               <input
                 type="text"
                 value={browserInput}
                 onChange={(e) => setBrowserInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && goBrowser()}
-                placeholder="https://…"
-                className="flex-1 min-h-[48px] bg-zinc-800 border border-zinc-600 rounded-xl px-4 py-2.5 text-base sm:text-sm font-mono focus:outline-none focus:border-blue-500"
+                placeholder="Search or enter address"
+                className="flex-1 min-h-[44px] bg-zinc-800 border border-zinc-600 rounded-xl px-4 py-2 text-base sm:text-sm font-mono focus:outline-none focus:border-blue-500"
+                inputMode="url"
+                autoCapitalize="none"
+                autoCorrect="off"
               />
-              <div className="flex gap-2">
-                <button
-                  onClick={goBrowser}
-                  className="flex-1 sm:flex-none min-h-[48px] px-5 rounded-xl bg-blue-600 hover:bg-blue-500 text-sm font-medium transition-colors"
-                >
-                  Go
-                </button>
+              <button
+                onClick={goBrowser}
+                disabled={!browserInput.trim()}
+                className="min-h-[44px] px-4 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-sm font-medium transition-colors"
+              >
+                Go
+              </button>
+              {browserUrl && (
                 <a
                   href={browserUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 sm:flex-none min-h-[48px] px-5 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-sm font-medium transition-colors inline-flex items-center justify-center"
+                  className="min-h-[44px] px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-sm font-medium transition-colors inline-flex items-center justify-center"
+                  title="Open in system browser"
                 >
-                  Open ↗
+                  ↗
                 </a>
-              </div>
+              )}
             </div>
 
-            <div className="px-3 py-2 border-b border-zinc-800 flex flex-wrap gap-2">
-              {[
-                { label: 'MAUI Home', url: 'https://mauicoin.vercel.app' },
-                { label: 'Chat', url: 'https://mauicoin.vercel.app/chat' },
-                { label: 'DNS', url: 'https://mauicoin.vercel.app/dns' },
-                { label: 'BdagScan', url: 'https://mauicoin.vercel.app/bdagscan' },
-              ].map((q) => (
-                <button
-                  key={q.url}
-                  onClick={() => {
-                    setBrowserInput(q.url);
-                    setBrowserUrl(q.url);
-                    setBrowserKey((k) => k + 1);
-                  }}
-                  className="min-h-[40px] text-sm px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 transition-colors"
-                >
-                  {q.label}
-                </button>
-              ))}
+            {/* Content */}
+            <div className="flex-1 bg-zinc-950 relative">
+              {browserUrl ? (
+                <iframe
+                  key={browserKey}
+                  src={browserUrl}
+                  title="MAUI Browser"
+                  className="absolute inset-0 w-full h-full border-0"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
+                  <p className="text-zinc-500 text-sm max-w-xs">
+                    Enter a URL above. Some sites block embedding — use ↗ to open in your system browser.
+                  </p>
+                </div>
+              )}
             </div>
-
-            {/* Embed area – many sites block iframes; Open ↗ is the reliable path */}
-            <div className="flex-1 bg-zinc-950 relative min-h-[40vh]">
-              <iframe
-                key={browserKey}
-                src={browserUrl}
-                title="MAUI Browser"
-                className="absolute inset-0 w-full h-full border-0"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-                referrerPolicy="no-referrer"
-              />
-            </div>
-
-            <p className="px-4 py-3 text-xs text-zinc-500 border-t border-zinc-800 leading-relaxed">
-              Many sites block in-app embedding. Use <strong className="text-zinc-300">Open ↗</strong> for
-              a full browser tab. Later this will open <span className="text-blue-400">yourname.maui</span> and IPFS content.
-            </p>
           </div>
         )}
 
