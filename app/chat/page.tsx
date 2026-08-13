@@ -483,32 +483,32 @@ function ChatPageClient() {
   const isMobileChatOpen = tab === 'inbox' && !!activeConv;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white pt-16 sm:pt-20 pb-24 sm:pb-6 px-3 sm:px-4">
+    <div className="min-h-screen bg-zinc-950 text-white pt-14 sm:pt-20 pb-24 sm:pb-6 px-3 sm:px-4">
       <div className="max-w-5xl mx-auto">
-        {/* Header – compact on mobile */}
-        <div className="mb-3 sm:mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="text-center sm:text-left">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">MAUI</h1>
-            <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">
+        {/* Header – title hidden on mobile (global Header already shows MAUI) */}
+        <div className="mb-2 sm:mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="hidden sm:block text-left">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">MAUI</h1>
+            <p className="text-sm text-zinc-500 mt-0.5">
               Multiple Application User Interface
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             {notifPermission !== 'granted' && notifPermission !== 'unsupported' && (
               <button
                 onClick={requestNotifications}
-                className="min-h-[44px] px-4 py-2 text-sm rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 transition-colors"
+                className="min-h-[40px] sm:min-h-[44px] px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 transition-colors"
               >
                 Enable notifications
               </button>
             )}
             {notifPermission === 'granted' && (
-              <span className="text-xs text-emerald-400 px-2">Notifications on</span>
+              <span className="text-xs text-emerald-400 px-2 hidden sm:inline">Notifications on</span>
             )}
             <button
               onClick={contactOfficial}
-              className="min-h-[44px] px-4 py-2 text-sm rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 transition-colors"
+              className="min-h-[40px] sm:min-h-[44px] px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 transition-colors"
             >
               Official Contact
             </button>
@@ -545,7 +545,7 @@ function ChatPageClient() {
 
         {/* ════════ INBOX TAB ════════ */}
         {tab === 'inbox' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 h-[calc(100dvh-11rem)] sm:h-[calc(100vh-12rem)]">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 h-[calc(100dvh-9.5rem)] sm:h-[calc(100vh-12rem)]">
             {/* Sidebar – hide on mobile when a chat is open */}
             <div
               className={`bg-zinc-900 border border-zinc-700 rounded-2xl sm:rounded-3xl flex flex-col overflow-hidden ${
