@@ -58,7 +58,15 @@ function isOfficialContact(peer?: string) {
 
 function ChatPageClient() {
   const { address, isConnected } = useAccount();
-  const { client, status, error, initialize, isReady } = useXmtpClient();
+  const {
+    client,
+    status,
+    error,
+    initialize,
+    revokeInstallations,
+    isInstallationLimitError,
+    isReady,
+  } = useXmtpClient();
   const searchParams = useSearchParams();
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -154,6 +162,17 @@ function ChatPageClient() {
 
   useEffect(() => {
     if (isReady) loadConversations();
+  }, [isReady, loadConversations]);
+
+  // Re-sync conversations when the user comes back to the tab
+  useEffect(() => {
+    function onVisibility() {
+      if (document.visibilityState === 'visible' && isReady) {
+        loadConversations();
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
   }, [isReady, loadConversations]);
 
   // ── Auto-start from ?to= ───────────────────────────────────────
@@ -405,13 +424,36 @@ function ChatPageClient() {
               Every wallet that connects gets its own private encrypted inbox.
               Messages stay between you and the people you chat with — no central server.
             </p>
-            {status === 'error' && <p className="text-red-400 text-sm">{error}</p>}
+            {status === 'error' && (
+              <p className="text-red-400 text-sm break-words">{error}</p>
+            )}
+
+            {/* Installation limit recovery */}
+            {status === 'error' && error && isInstallationLimitError(error) && (
+              <div className="space-y-3">
+                <p className="text-amber-400/90 text-xs leading-relaxed">
+                  This wallet has hit XMTP’s 10-installation limit (common during testing).
+                  Click below to revoke the old installations, then try opening the inbox again.
+                </p>
+                <button
+                  onClick={revokeInstallations}
+                  className="w-full py-3 px-6 rounded-2xl bg-amber-600 hover:bg-amber-500 font-medium transition-colors"
+                >
+                  Revoke Old Installations
+                </button>
+              </div>
+            )}
+
             <button
               onClick={initialize}
-              disabled={status === 'initializing'}
+              disabled={status === 'initializing' || status === 'revoking'}
               className="w-full py-3 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
             >
-              {status === 'initializing' ? 'Opening your inbox…' : 'Open My Inbox'}
+              {status === 'initializing'
+                ? 'Opening your inbox…'
+                : status === 'revoking'
+                  ? 'Please wait…'
+                  : 'Open My Inbox'}
             </button>
             <p className="text-zinc-500 text-xs leading-relaxed">
               You will be asked to sign a message. This does <strong>not</strong> cost gas and only

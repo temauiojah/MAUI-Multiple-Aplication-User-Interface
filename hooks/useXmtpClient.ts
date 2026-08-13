@@ -14,6 +14,10 @@ export type XmtpStatus = 'idle' | 'initializing' | 'ready' | 'error' | 'revoking
  */
 const XMTP_ENV: 'dev' | 'production' = 'production';
 
+function sessionKey(address: string) {
+  return `maui-xmtp-ready:${address.toLowerCase()}:${XMTP_ENV}`;
+}
+
 export function useXmtpClient() {
   const { address, isConnected } = useAccount();
   const { data: walletClient } = useWalletClient();
@@ -24,7 +28,13 @@ export function useXmtpClient() {
 
   // Prevent double-init (React Strict Mode + rapid re-renders)
   const initializingRef = useRef(false);
-  const clientRef = useRef<any>(null); // any to avoid SDK type mismatches across versions
+  const clientRef = useRef<any>(null);
+  const addressRef = useRef<string | undefined>(address);
+
+  // Keep address ref current for visibility handler
+  useEffect(() => {
+    addressRef.current = address;
+  }, [address]);
 
   const isInstallationLimitError = (msg: string | null | undefined) =>
     !!msg &&
@@ -37,7 +47,9 @@ export function useXmtpClient() {
       setError('Wallet not connected');
       return;
     }
-    if (initializingRef.current || clientRef.current) return;
+    if (initializingRef.current) return;
+    // If we already have a live client for this session, keep it
+    if (clientRef.current && status === 'ready') return;
 
     initializingRef.current = true;
     setStatus('initializing');
@@ -47,7 +59,6 @@ export function useXmtpClient() {
       // Close any previous client that might still hold an OPFS handle
       if (clientRef.current) {
         try {
-          // Some SDK versions expose close(), others do not – guard it
           if (typeof clientRef.current.close === 'function') {
             await clientRef.current.close();
           }
@@ -60,7 +71,6 @@ export function useXmtpClient() {
 
       const signer = createXmtpSigner(address, walletClient);
 
-      // Cast options to any so different SDK versions accept the env property
       const xmtpClient = await Client.create(signer, {
         env: XMTP_ENV,
       } as any);
@@ -68,6 +78,13 @@ export function useXmtpClient() {
       clientRef.current = xmtpClient;
       setClient(xmtpClient);
       setStatus('ready');
+
+      // Remember that this wallet has successfully opened the inbox in this browser session
+      try {
+        sessionStorage.setItem(sessionKey(address), '1');
+      } catch {
+        // private mode / blocked storage – ignore
+      }
     } catch (err: any) {
       console.error('XMTP init error:', err);
       const message = err?.message || 'Failed to initialize XMTP';
@@ -76,12 +93,10 @@ export function useXmtpClient() {
     } finally {
       initializingRef.current = false;
     }
-  }, [address, walletClient]);
+  }, [address, walletClient, status]);
 
   /**
    * Static revocation – works even when Client.create() fails because of the 10/10 limit.
-   * Extracts the InboxID from the error message (most reliable) and falls back to the
-   * known official MAUI contact InboxID.
    */
   const revokeInstallations = useCallback(async () => {
     if (!address || !walletClient) {
@@ -96,14 +111,12 @@ export function useXmtpClient() {
     try {
       const signer = createXmtpSigner(address, walletClient);
 
-      // 1. Prefer InboxID from the error message itself
       let inboxId: string | null = null;
       if (previousError) {
         const match = previousError.match(/InboxID\s+([a-f0-9]{64})/i);
         if (match) inboxId = match[1];
       }
 
-      // 2. Fallback for the official MAUI contact
       if (
         !inboxId &&
         address.toLowerCase() === '0x185e70a3a13ed9a47fe49029ea7ca9a5c3624940'
@@ -119,8 +132,6 @@ export function useXmtpClient() {
 
       console.log('[XMTP] Revoking installations for inbox:', inboxId);
 
-      // Use (Client as any) so TypeScript does not complain about static methods
-      // that vary between SDK versions
       const states = await (Client as any).fetchInboxStates([inboxId], XMTP_ENV);
       const installations = states?.[0]?.installations ?? [];
 
@@ -136,7 +147,13 @@ export function useXmtpClient() {
 
       console.log(`[XMTP] Successfully revoked ${toRevoke.length} installations`);
 
-      // Give the network a moment, then automatically retry opening the inbox
+      // Clear the session flag so the next init is clean
+      try {
+        sessionStorage.removeItem(sessionKey(address));
+      } catch {
+        // ignore
+      }
+
       setTimeout(() => {
         initialize();
       }, 1500);
@@ -147,7 +164,54 @@ export function useXmtpClient() {
     }
   }, [address, walletClient, error, initialize]);
 
-  // Clean up when wallet disconnects
+  // Auto-open inbox when wallet is connected and we already opened it this session
+  useEffect(() => {
+    if (!isConnected || !address || !walletClient) return;
+    if (status === 'ready' || status === 'initializing' || status === 'revoking') return;
+
+    let shouldAuto = false;
+    try {
+      shouldAuto = sessionStorage.getItem(sessionKey(address)) === '1';
+    } catch {
+      // ignore
+    }
+
+    if (shouldAuto) {
+      // Small delay so walletClient is fully ready after tab focus
+      const t = setTimeout(() => {
+        initialize();
+      }, 300);
+      return () => clearTimeout(t);
+    }
+  }, [isConnected, address, walletClient, status, initialize]);
+
+  // When the tab becomes visible again, re-open if needed (keeps inbox alive across tab switches)
+  useEffect(() => {
+    function onVisibility() {
+      if (document.visibilityState !== 'visible') return;
+      const addr = addressRef.current;
+      if (!addr || !isConnected) return;
+
+      // If we already have a client, stay ready
+      if (clientRef.current && status === 'ready') return;
+
+      // If we previously opened the inbox this session, auto re-init
+      let shouldAuto = false;
+      try {
+        shouldAuto = sessionStorage.getItem(sessionKey(addr)) === '1';
+      } catch {
+        // ignore
+      }
+      if (shouldAuto && status !== 'initializing' && status !== 'revoking') {
+        initialize();
+      }
+    }
+
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [isConnected, status, initialize]);
+
+  // Clean up only when the wallet truly disconnects
   useEffect(() => {
     if (!isConnected) {
       if (clientRef.current) {
