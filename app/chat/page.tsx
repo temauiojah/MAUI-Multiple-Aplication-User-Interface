@@ -2,13 +2,39 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { useAccount } from 'wagmi';
+import {
+  useAccount,
+  useChainId,
+  useSwitchChain,
+  useSendTransaction,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+} from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { isAddress } from 'viem';
+import { isAddress, parseUnits } from 'viem';
 import { IdentifierKind } from '@xmtp/browser-sdk';
 import { useXmtpClient } from '@/hooks/useXmtpClient';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import {
+  type PayToken,
+  type PaymentRequest,
+  type PaymentReceipt,
+  encodePaymentRequest,
+  encodePaymentReceipt,
+  parsePaymentPayload,
+  isPaymentMessage,
+  newRequestId,
+  defaultChainForToken,
+  tokenDecimals,
+  chainLabel,
+  explorerTxUrl,
+  USDC_BASE,
+  MAUI_TOKEN,
+  ERC20_ABI,
+  BASE_CHAIN_ID,
+  BLOCKDAG_CHAIN_ID,
+} from '@/lib/payments';
 
 /** Official MAUI contact address — same constant used on /contact */
 export const MAUI_CONTACT_ADDRESS =
@@ -41,6 +67,7 @@ function extractContent(raw: any): string {
 
 function isRealTextMessage(content: string): boolean {
   if (!content || content.trim() === '') return false;
+  if (isPaymentMessage(content)) return true; // show as payment cards
   if (content.startsWith('{') || content.startsWith('[')) return false;
   return true;
 }
@@ -59,6 +86,10 @@ function isOfficialContact(peer?: string) {
 
 function ChatPageClient() {
   const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const { switchChainAsync } = useSwitchChain();
+  const { sendTransactionAsync } = useSendTransaction();
+  const { writeContractAsync } = useWriteContract();
   const {
     client,
     status,
@@ -78,6 +109,15 @@ function ChatPageClient() {
   const [draft, setDraft] = useState('');
   const [loadingConvos, setLoadingConvos] = useState(false);
   const [sending, setSending] = useState(false);
+
+  // Payment request UI
+  const [showPayModal, setShowPayModal] = useState(false);
+  const [payAmount, setPayAmount] = useState('');
+  const [payToken, setPayToken] = useState<PayToken>('USDC');
+  const [payNote, setPayNote] = useState('');
+  const [payingId, setPayingId] = useState<string | null>(null);
+  const [payError, setPayError] = useState<string | null>(null);
+  const [payTxHash, setPayTxHash] = useState<`0x${string}` | undefined>();
   const [notifPermission, setNotifPermission] = useState<NotificationPermission | 'unsupported'>(
     typeof window !== 'undefined' && 'Notification' in window
       ? Notification.permission
@@ -357,6 +397,104 @@ function ChatPageClient() {
     }
   }
 
+  async function sendPaymentRequest() {
+    if (!activeConv || !address || !payAmount.trim()) return;
+    const amt = payAmount.trim();
+    if (!/^[0-9]+(\.[0-9]+)?$/.test(amt) || Number(amt) <= 0) {
+      alert('Enter a valid amount');
+      return;
+    }
+    const peer = activeConv.peerAddress;
+    if (!peer || !isAddress(peer)) {
+      alert('This chat has no valid peer address for payments yet.');
+      return;
+    }
+    // Request: peer pays ME (to = my address)
+    const req = {
+      v: 1 as const,
+      kind: 'payment_request' as const,
+      id: newRequestId(),
+      token: payToken,
+      amount: amt,
+      to: address,
+      from: address,
+      note: payNote.trim() || undefined,
+      chainId: defaultChainForToken(payToken),
+      createdAt: Date.now(),
+    };
+    setSending(true);
+    try {
+      await activeConv._raw.send(encodePaymentRequest(req));
+      setShowPayModal(false);
+      setPayAmount('');
+      setPayNote('');
+    } catch (err: any) {
+      console.error(err);
+      alert(err?.message || 'Failed to send payment request');
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function payRequest(req: PaymentRequest) {
+    if (!address || !activeConv) return;
+    if (req.to.toLowerCase() === address.toLowerCase()) {
+      alert('This request is payable by the other party.');
+      return;
+    }
+    setPayingId(req.id);
+    setPayError(null);
+    setPayTxHash(undefined);
+    try {
+      // Switch chain if needed
+      if (chainId !== req.chainId) {
+        await switchChainAsync({ chainId: req.chainId });
+      }
+      const decimals = tokenDecimals(req.token);
+      const value = parseUnits(req.amount, decimals);
+      let hash: `0x${string}`;
+
+      if (req.token === 'BDAG') {
+        hash = await sendTransactionAsync({
+          to: req.to as `0x${string}`,
+          value,
+          chainId: req.chainId,
+        });
+      } else {
+        const tokenAddr =
+          req.token === 'USDC' ? USDC_BASE : MAUI_TOKEN;
+        hash = await writeContractAsync({
+          address: tokenAddr,
+          abi: ERC20_ABI,
+          functionName: 'transfer',
+          args: [req.to as `0x${string}`, value],
+          chainId: req.chainId,
+        });
+      }
+
+      setPayTxHash(hash);
+
+      const receipt = {
+        v: 1 as const,
+        kind: 'payment_receipt' as const,
+        requestId: req.id,
+        token: req.token,
+        amount: req.amount,
+        to: req.to,
+        from: address,
+        txHash: hash,
+        chainId: req.chainId,
+        createdAt: Date.now(),
+      };
+      await activeConv._raw.send(encodePaymentReceipt(receipt));
+    } catch (err: any) {
+      console.error(err);
+      setPayError(err?.shortMessage || err?.message || 'Payment failed');
+    } finally {
+      setPayingId(null);
+    }
+  }
+
   function contactOfficial() {
     setTab('inbox');
     setTimeout(() => {
@@ -611,7 +749,7 @@ function ChatPageClient() {
 
             {/* Main chat panel – full width on mobile when open */}
             <div
-              className={`md:col-span-2 bg-zinc-900 border border-zinc-700 rounded-2xl sm:rounded-3xl flex flex-col overflow-hidden ${
+              className={`md:col-span-2 bg-zinc-900 border border-zinc-700 rounded-2xl sm:rounded-3xl flex flex-col overflow-hidden relative ${
                 isMobileChatOpen ? 'flex' : 'hidden md:flex'
               }`}
             >
@@ -661,6 +799,77 @@ function ChatPageClient() {
                         m.senderAddress
                           .toLowerCase()
                           .includes(address?.toLowerCase().slice(2) || '');
+                      const pay = parsePaymentPayload(m.content);
+
+                      if (pay?.kind === 'payment_request') {
+                        const iPay =
+                          !!address &&
+                          pay.to.toLowerCase() !== address.toLowerCase();
+                        return (
+                          <div
+                            key={m.id}
+                            className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
+                          >
+                            <div className="max-w-[90%] sm:max-w-[80%] w-full rounded-2xl border border-amber-500/40 bg-zinc-900 p-4 space-y-2">
+                              <p className="text-xs uppercase tracking-wide text-amber-400 font-medium">
+                                Payment request
+                              </p>
+                              <p className="text-xl font-semibold text-zinc-100">
+                                {pay.amount} {pay.token}
+                              </p>
+                              <p className="text-xs text-zinc-500">
+                                {chainLabel(pay.chainId)} · to {pay.to.slice(0, 6)}…{pay.to.slice(-4)}
+                              </p>
+                              {pay.note && (
+                                <p className="text-sm text-zinc-300">{pay.note}</p>
+                              )}
+                              {iPay ? (
+                                <button
+                                  onClick={() => payRequest(pay)}
+                                  disabled={payingId === pay.id}
+                                  className="w-full min-h-[44px] mt-1 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-zinc-950 font-medium text-sm"
+                                >
+                                  {payingId === pay.id
+                                    ? 'Confirm in wallet…'
+                                    : `Pay ${pay.amount} ${pay.token}`}
+                                </button>
+                              ) : (
+                                <p className="text-xs text-zinc-500">Waiting for payment…</p>
+                              )}
+                              {payError && payingId === null && (
+                                <p className="text-xs text-red-400 break-words">{payError}</p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      if (pay?.kind === 'payment_receipt') {
+                        return (
+                          <div
+                            key={m.id}
+                            className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
+                          >
+                            <div className="max-w-[90%] sm:max-w-[80%] rounded-2xl border border-emerald-500/40 bg-zinc-900 p-4 space-y-1">
+                              <p className="text-xs uppercase tracking-wide text-emerald-400 font-medium">
+                                Paid
+                              </p>
+                              <p className="text-lg font-semibold text-zinc-100">
+                                {pay.amount} {pay.token}
+                              </p>
+                              <a
+                                href={explorerTxUrl(pay.chainId, pay.txHash)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-400 hover:underline break-all"
+                              >
+                                {pay.txHash.slice(0, 10)}…{pay.txHash.slice(-6)} ↗
+                              </a>
+                            </div>
+                          </div>
+                        );
+                      }
+
                       return (
                         <div
                           key={m.id}
@@ -688,7 +897,7 @@ function ChatPageClient() {
                     <div ref={messagesEndRef} />
                   </div>
 
-                  <div className="p-3 sm:p-4 border-t border-zinc-700">
+                  <div className="p-3 sm:p-4 border-t border-zinc-700 space-y-2">
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -708,7 +917,73 @@ function ChatPageClient() {
                         {sending ? '…' : 'Send'}
                       </button>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowPayModal(true)}
+                      className="text-xs text-amber-400/90 hover:text-amber-300 px-1"
+                    >
+                      + Request payment
+                    </button>
                   </div>
+
+                  {/* Payment request modal */}
+                  {showPayModal && (
+                    <div className="absolute inset-0 z-20 bg-black/70 flex items-end sm:items-center justify-center p-4">
+                      <div className="w-full max-w-sm bg-zinc-900 border border-zinc-700 rounded-3xl p-5 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-zinc-100">Request payment</h3>
+                          <button
+                            onClick={() => setShowPayModal(false)}
+                            className="text-zinc-500 hover:text-zinc-300 text-sm"
+                          >
+                            Close
+                          </button>
+                        </div>
+                        <div className="flex gap-2">
+                          {(['USDC', 'MAUI', 'BDAG'] as PayToken[]).map((t) => (
+                            <button
+                              key={t}
+                              onClick={() => setPayToken(t)}
+                              className={`flex-1 min-h-[40px] rounded-xl text-sm font-medium border transition-colors ${
+                                payToken === t
+                                  ? 'bg-amber-500 text-zinc-950 border-amber-500'
+                                  : 'bg-zinc-800 text-zinc-300 border-zinc-700'
+                              }`}
+                            >
+                              {t}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-[11px] text-zinc-500">
+                          {payToken === 'USDC'
+                            ? 'Settles on Base (USDC). Payer needs a little ETH on Base for gas.'
+                            : 'Settles on BlockDAG.'}
+                        </p>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="Amount"
+                          value={payAmount}
+                          onChange={(e) => setPayAmount(e.target.value)}
+                          className="w-full min-h-[48px] bg-zinc-800 border border-zinc-600 rounded-xl px-4 text-base focus:outline-none focus:border-amber-500"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Note (optional)"
+                          value={payNote}
+                          onChange={(e) => setPayNote(e.target.value)}
+                          className="w-full min-h-[44px] bg-zinc-800 border border-zinc-600 rounded-xl px-4 text-sm focus:outline-none focus:border-amber-500"
+                        />
+                        <button
+                          onClick={sendPaymentRequest}
+                          disabled={!payAmount.trim() || sending}
+                          className="w-full min-h-[48px] rounded-2xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-zinc-950 font-medium"
+                        >
+                          Send request
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -809,4 +1084,3 @@ export default function ChatPage() {
     </Suspense>
   );
 }
-
