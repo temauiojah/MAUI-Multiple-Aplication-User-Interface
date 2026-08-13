@@ -85,8 +85,8 @@ function ChatPageClient() {
   );
 
   // Browser tab state
-  const [browserUrl, setBrowserUrl] = useState('');
-  const [browserInput, setBrowserInput] = useState('');
+  const [browserUrl, setBrowserUrl] = useState('https://mauicoin.vercel.app/grokoracle');
+  const [browserInput, setBrowserInput] = useState('https://mauicoin.vercel.app/grokoracle');
   const [browserKey, setBrowserKey] = useState(0);
 
   const autoStartedRef = useRef(false);
