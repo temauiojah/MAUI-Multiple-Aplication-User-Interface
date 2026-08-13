@@ -8,11 +8,17 @@ import { createXmtpSigner } from '@/lib/xmtp';
 
 export type XmtpStatus = 'idle' | 'initializing' | 'ready' | 'error' | 'revoking';
 
-/**
- * Change this to 'production' for the live site.
- * Keep 'dev' only while actively developing / testing.
- */
 const XMTP_ENV: 'dev' | 'production' = 'production';
+
+// ── Module-level singleton (survives Next.js route changes) ──────────────
+// useRef is destroyed when /chat unmounts. This lives for the whole browser session.
+type Singleton = {
+  client: any;
+  address: string;
+  env: string;
+};
+
+let singleton: Singleton | null = null;
 
 function sessionKey(address: string) {
   return `maui-xmtp-ready:${address.toLowerCase()}:${XMTP_ENV}`;
@@ -26,15 +32,7 @@ export function useXmtpClient() {
   const [status, setStatus] = useState<XmtpStatus>('idle');
   const [error, setError] = useState<string | null>(null);
 
-  // Prevent double-init (React Strict Mode + rapid re-renders)
   const initializingRef = useRef(false);
-  const clientRef = useRef<any>(null);
-  const addressRef = useRef<string | undefined>(address);
-
-  // Keep address ref current for visibility handler
-  useEffect(() => {
-    addressRef.current = address;
-  }, [address]);
 
   const isInstallationLimitError = (msg: string | null | undefined) =>
     !!msg &&
@@ -42,62 +40,90 @@ export function useXmtpClient() {
       msg
     );
 
-  const initialize = useCallback(async () => {
-    if (!address || !walletClient) {
-      setError('Wallet not connected');
-      return;
+  // On every mount: if singleton already has a client for this address, restore it
+  useEffect(() => {
+    if (
+      singleton &&
+      address &&
+      singleton.address === address.toLowerCase() &&
+      singleton.env === XMTP_ENV
+    ) {
+      setClient(singleton.client);
+      setStatus('ready');
+      setError(null);
     }
-    if (initializingRef.current) return;
-    // If we already have a live client for this session, keep it
-    if (clientRef.current && status === 'ready') return;
+  }, [address]);
 
-    initializingRef.current = true;
-    setStatus('initializing');
-    setError(null);
+  const initialize = useCallback(
+    async (opts?: { force?: boolean }) => {
+      if (!address || !walletClient) {
+        setError('Wallet not connected');
+        return;
+      }
 
-    try {
-      // Close any previous client that might still hold an OPFS handle
-      if (clientRef.current) {
-        try {
-          if (typeof clientRef.current.close === 'function') {
-            await clientRef.current.close();
+      // Already have a live singleton for this wallet → just restore React state
+      if (
+        !opts?.force &&
+        singleton &&
+        singleton.address === address.toLowerCase() &&
+        singleton.env === XMTP_ENV
+      ) {
+        setClient(singleton.client);
+        setStatus('ready');
+        setError(null);
+        return;
+      }
+
+      if (initializingRef.current) return;
+      initializingRef.current = true;
+      setStatus('initializing');
+      setError(null);
+
+      try {
+        // Only close previous when forcing a brand-new client
+        if (opts?.force && singleton?.client) {
+          try {
+            if (typeof singleton.client.close === 'function') {
+              await singleton.client.close();
+            }
+          } catch {
+            // ignore
           }
+          singleton = null;
+          setClient(null);
+        }
+
+        const signer = createXmtpSigner(address, walletClient);
+
+        const xmtpClient = await Client.create(signer, {
+          env: XMTP_ENV,
+        } as any);
+
+        singleton = {
+          client: xmtpClient,
+          address: address.toLowerCase(),
+          env: XMTP_ENV,
+        };
+
+        setClient(xmtpClient);
+        setStatus('ready');
+
+        try {
+          sessionStorage.setItem(sessionKey(address), '1');
         } catch {
           // ignore
         }
-        clientRef.current = null;
-        setClient(null);
+      } catch (err: any) {
+        console.error('XMTP init error:', err);
+        setError(err?.message || 'Failed to initialize XMTP');
+        setStatus('error');
+      } finally {
+        initializingRef.current = false;
       }
+    },
+    [address, walletClient]
+  );
 
-      const signer = createXmtpSigner(address, walletClient);
-
-      const xmtpClient = await Client.create(signer, {
-        env: XMTP_ENV,
-      } as any);
-
-      clientRef.current = xmtpClient;
-      setClient(xmtpClient);
-      setStatus('ready');
-
-      // Remember that this wallet has successfully opened the inbox in this browser session
-      try {
-        sessionStorage.setItem(sessionKey(address), '1');
-      } catch {
-        // private mode / blocked storage – ignore
-      }
-    } catch (err: any) {
-      console.error('XMTP init error:', err);
-      const message = err?.message || 'Failed to initialize XMTP';
-      setError(message);
-      setStatus('error');
-    } finally {
-      initializingRef.current = false;
-    }
-  }, [address, walletClient, status]);
-
-  /**
-   * Static revocation – works even when Client.create() fails because of the 10/10 limit.
-   */
   const revokeInstallations = useCallback(async () => {
     if (!address || !walletClient) {
       setError('Wallet not connected');
@@ -142,20 +168,31 @@ export function useXmtpClient() {
       }
 
       const toRevoke = installations.map((i: any) => i.bytes);
-
       await (Client as any).revokeInstallations(signer, inboxId, toRevoke, XMTP_ENV);
 
       console.log(`[XMTP] Successfully revoked ${toRevoke.length} installations`);
 
-      // Clear the session flag so the next init is clean
       try {
         sessionStorage.removeItem(sessionKey(address));
       } catch {
         // ignore
       }
 
+      // Clear singleton so next init is forced
+      if (singleton?.client) {
+        try {
+          if (typeof singleton.client.close === 'function') {
+            await singleton.client.close();
+          }
+        } catch {
+          // ignore
+        }
+      }
+      singleton = null;
+      setClient(null);
+
       setTimeout(() => {
-        initialize();
+        initialize({ force: true });
       }, 1500);
     } catch (err: any) {
       console.error('Revoke failed:', err);
@@ -164,10 +201,23 @@ export function useXmtpClient() {
     }
   }, [address, walletClient, error, initialize]);
 
-  // Auto-open inbox when wallet is connected and we already opened it this session
+  // Auto-restore on mount / when wallet becomes available
   useEffect(() => {
     if (!isConnected || !address || !walletClient) return;
-    if (status === 'ready' || status === 'initializing' || status === 'revoking') return;
+
+    // Singleton already good → restore immediately (no Client.create)
+    if (
+      singleton &&
+      singleton.address === address.toLowerCase() &&
+      singleton.env === XMTP_ENV
+    ) {
+      setClient(singleton.client);
+      setStatus('ready');
+      setError(null);
+      return;
+    }
+
+    if (status === 'initializing' || status === 'revoking' || status === 'ready') return;
 
     let shouldAuto = false;
     try {
@@ -177,64 +227,75 @@ export function useXmtpClient() {
     }
 
     if (shouldAuto) {
-      // Small delay so walletClient is fully ready after tab focus
-      const t = setTimeout(() => {
-        initialize();
-      }, 300);
+      const t = setTimeout(() => initialize(), 200);
       return () => clearTimeout(t);
     }
   }, [isConnected, address, walletClient, status, initialize]);
 
-  // When the tab becomes visible again, re-open if needed (keeps inbox alive across tab switches)
+  // Tab focus: only restore from singleton – never create a second client
   useEffect(() => {
-    function onVisibility() {
-      if (document.visibilityState !== 'visible') return;
-      const addr = addressRef.current;
-      if (!addr || !isConnected) return;
+    function onFocus() {
+      if (!isConnected || !address) return;
 
-      // If we already have a client, stay ready
-      if (clientRef.current && status === 'ready') return;
-
-      // If we previously opened the inbox this session, auto re-init
-      let shouldAuto = false;
-      try {
-        shouldAuto = sessionStorage.getItem(sessionKey(addr)) === '1';
-      } catch {
-        // ignore
-      }
-      if (shouldAuto && status !== 'initializing' && status !== 'revoking') {
-        initialize();
+      if (
+        singleton &&
+        singleton.address === address.toLowerCase() &&
+        singleton.env === XMTP_ENV
+      ) {
+        setClient(singleton.client);
+        setStatus('ready');
+        setError(null);
       }
     }
 
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => document.removeEventListener('visibilitychange', onVisibility);
-  }, [isConnected, status, initialize]);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') onFocus();
+    });
+    window.addEventListener('pageshow', onFocus);
 
-  // Clean up only when the wallet truly disconnects
+    return () => {
+      document.removeEventListener('visibilitychange', onFocus);
+      window.removeEventListener('pageshow', onFocus);
+    };
+  }, [isConnected, address]);
+
+  // Real wallet disconnect only
   useEffect(() => {
     if (!isConnected) {
-      if (clientRef.current) {
-        try {
-          if (typeof clientRef.current.close === 'function') {
-            clientRef.current.close();
-          }
-        } catch {
-          // ignore
-        }
-        clientRef.current = null;
-      }
+      // Do NOT close the singleton here on every brief wagmi flicker.
+      // Only clear React state. Singleton is cleared when address actually changes
+      // or user explicitly disconnects for a long time.
       setClient(null);
       setStatus('idle');
       setError(null);
     }
   }, [isConnected]);
 
+  // If the user switches to a different wallet, drop the old singleton
+  useEffect(() => {
+    if (
+      address &&
+      singleton &&
+      singleton.address !== address.toLowerCase()
+    ) {
+      try {
+        if (typeof singleton.client.close === 'function') {
+          singleton.client.close();
+        }
+      } catch {
+        // ignore
+      }
+      singleton = null;
+      setClient(null);
+      setStatus('idle');
+    }
+  }, [address]);
+
   return {
     client,
     status,
     error,
-    initialize,
+    initialize: () => initialize(),
     revokeInstallations,
     isInstallationLimitError,
     isReady: status === 'ready' && !!client,
