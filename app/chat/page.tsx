@@ -27,7 +27,7 @@ type Message = {
   sentAt: Date;
 };
 
-type AppTab = 'inbox' | 'browser' | 'profile';
+type AppTab = 'inbox' | 'profile';
 
 function extractContent(raw: any): string {
   if (raw == null) return '';
@@ -84,10 +84,6 @@ function ChatPageClient() {
       : 'unsupported'
   );
 
-  // Browser tab state
-  const [browserUrl, setBrowserUrl] = useState('https://mauicoin.vercel.app/grokoracle');
-  const [browserInput, setBrowserInput] = useState('https://mauicoin.vercel.app/grokoracle');
-  const [browserKey, setBrowserKey] = useState(0);
 
   const autoStartedRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -390,16 +386,6 @@ function ChatPageClient() {
     }, 0);
   }
 
-  function goBrowser() {
-    let url = browserInput.trim();
-    if (!url) return;
-    if (!/^https?:\/\//i.test(url)) {
-      url = 'https://' + url;
-    }
-    setBrowserUrl(url);
-    setBrowserInput(url);
-    setBrowserKey((k) => k + 1);
-  }
 
   // ── UI states ──────────────────────────────────────────────────
   if (!isConnected) {
@@ -494,8 +480,7 @@ function ChatPageClient() {
             </p>
           </div>
 
-          {tab !== 'browser' && (
-            <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
               {notifPermission !== 'granted' && notifPermission !== 'unsupported' && (
                 <button
                   onClick={requestNotifications}
@@ -514,7 +499,6 @@ function ChatPageClient() {
                 Official Contact
               </button>
             </div>
-          )}
         </div>
 
         {/* Tab bar – larger touch targets; fixed bottom on mobile */}
@@ -523,7 +507,6 @@ function ChatPageClient() {
             {(
               [
                 { id: 'inbox' as const, label: 'Inbox' },
-                { id: 'browser' as const, label: 'Browser' },
                 { id: 'profile' as const, label: 'Profile' },
               ] as const
             ).map((t) => (
@@ -732,63 +715,6 @@ function ChatPageClient() {
           </div>
         )}
 
-        {/* ════════ BROWSER TAB ════════ */}
-        {tab === 'browser' && (
-          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col h-[calc(100dvh-8.5rem)] sm:h-[calc(100vh-12rem)]">
-            {/* Address bar only */}
-            <div className="p-2 sm:p-3 border-b border-zinc-700 flex gap-2 items-center">
-              <input
-                type="text"
-                value={browserInput}
-                onChange={(e) => setBrowserInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && goBrowser()}
-                placeholder="Search or enter address"
-                className="flex-1 min-h-[44px] bg-zinc-800 border border-zinc-600 rounded-xl px-4 py-2 text-base sm:text-sm font-mono focus:outline-none focus:border-blue-500"
-                inputMode="url"
-                autoCapitalize="none"
-                autoCorrect="off"
-              />
-              <button
-                onClick={goBrowser}
-                disabled={!browserInput.trim()}
-                className="min-h-[44px] px-4 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-sm font-medium transition-colors"
-              >
-                Go
-              </button>
-              {browserUrl && (
-                <a
-                  href={browserUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="min-h-[44px] px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-sm font-medium transition-colors inline-flex items-center justify-center"
-                  title="Open in system browser"
-                >
-                  ↗
-                </a>
-              )}
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 bg-zinc-950 relative">
-              {browserUrl ? (
-                <iframe
-                  key={browserKey}
-                  src={browserUrl}
-                  title="MAUI Browser"
-                  className="absolute inset-0 w-full h-full border-0"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
-                  <p className="text-zinc-500 text-sm max-w-xs">
-                    Enter a URL above. Some sites block embedding — use ↗ to open in your system browser.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* ════════ PROFILE TAB ════════ */}
         {tab === 'profile' && (
@@ -883,3 +809,4 @@ export default function ChatPage() {
     </Suspense>
   );
 }
+
