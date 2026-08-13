@@ -480,14 +480,16 @@ function ChatPageClient() {
   }
 
   // ── Full multi-tab UI ──────────────────────────────────────────
+  const isMobileChatOpen = tab === 'inbox' && !!activeConv;
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-white pt-20 pb-6 px-4">
+    <div className="min-h-screen bg-zinc-950 text-white pt-16 sm:pt-20 pb-24 sm:pb-6 px-3 sm:px-4">
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="text-center md:text-left">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">MAUI</h1>
-            <p className="text-sm text-zinc-500 mt-0.5">
+        {/* Header – compact on mobile */}
+        <div className="mb-3 sm:mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="text-center sm:text-left">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">MAUI</h1>
+            <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">
               Multiple Application User Interface
             </p>
           </div>
@@ -496,7 +498,7 @@ function ChatPageClient() {
             {notifPermission !== 'granted' && notifPermission !== 'unsupported' && (
               <button
                 onClick={requestNotifications}
-                className="px-3 py-1.5 text-xs rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 transition-colors"
+                className="min-h-[44px] px-4 py-2 text-sm rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 transition-colors"
               >
                 Enable notifications
               </button>
@@ -506,42 +508,51 @@ function ChatPageClient() {
             )}
             <button
               onClick={contactOfficial}
-              className="px-3 py-1.5 text-xs rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 transition-colors"
+              className="min-h-[44px] px-4 py-2 text-sm rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 transition-colors"
             >
-              Message Official Contact
+              Official Contact
             </button>
           </div>
         </div>
 
-        {/* Tab bar */}
-        <div className="flex gap-1 p-1 mb-4 bg-zinc-900 border border-zinc-700 rounded-2xl w-full sm:w-auto sm:inline-flex">
-          {(
-            [
-              { id: 'inbox' as const, label: 'Inbox' },
-              { id: 'browser' as const, label: 'Browser' },
-              { id: 'profile' as const, label: 'Profile' },
-            ] as const
-          ).map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                tab === t.id
-                  ? 'bg-zinc-100 text-zinc-950'
-                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        {/* Tab bar – larger touch targets; fixed bottom on mobile */}
+        <div className="fixed bottom-0 inset-x-0 z-40 sm:static sm:z-auto sm:mb-4 bg-zinc-950/95 sm:bg-transparent backdrop-blur border-t border-zinc-800 sm:border-0 p-2 sm:p-0">
+          <div className="flex gap-1 p-1 bg-zinc-900 border border-zinc-700 rounded-2xl max-w-5xl mx-auto">
+            {(
+              [
+                { id: 'inbox' as const, label: 'Inbox' },
+                { id: 'browser' as const, label: 'Browser' },
+                { id: 'profile' as const, label: 'Profile' },
+              ] as const
+            ).map((t) => (
+              <button
+                key={t.id}
+                onClick={() => {
+                  setTab(t.id);
+                  if (t.id !== 'inbox') setActiveConv(null);
+                }}
+                className={`flex-1 min-h-[48px] px-3 sm:px-5 py-3 rounded-xl text-sm font-semibold transition-colors ${
+                  tab === t.id
+                    ? 'bg-zinc-100 text-zinc-950'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ════════ INBOX TAB ════════ */}
         {tab === 'inbox' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-12rem)]">
-            {/* Sidebar */}
-            <div className="bg-zinc-900 border border-zinc-700 rounded-3xl flex flex-col overflow-hidden">
-              <div className="p-4 border-b border-zinc-700">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 h-[calc(100dvh-11rem)] sm:h-[calc(100vh-12rem)]">
+            {/* Sidebar – hide on mobile when a chat is open */}
+            <div
+              className={`bg-zinc-900 border border-zinc-700 rounded-2xl sm:rounded-3xl flex flex-col overflow-hidden ${
+                isMobileChatOpen ? 'hidden md:flex' : 'flex'
+              }`}
+            >
+              <div className="p-3 sm:p-4 border-b border-zinc-700">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-medium text-zinc-200">Your Inbox</p>
                   <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-mono">
@@ -555,11 +566,11 @@ function ChatPageClient() {
                     value={newPeer}
                     onChange={(e) => setNewPeer(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && startChat()}
-                    className="flex-1 bg-zinc-800 border border-zinc-600 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                    className="flex-1 min-h-[44px] bg-zinc-800 border border-zinc-600 rounded-xl px-3 py-2 text-base sm:text-sm focus:outline-none focus:border-blue-500"
                   />
                   <button
                     onClick={startChat}
-                    className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-sm font-medium transition-colors"
+                    className="min-h-[44px] px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-sm font-medium transition-colors"
                   >
                     Start
                   </button>
@@ -582,8 +593,8 @@ function ChatPageClient() {
                     <button
                       key={c.id}
                       onClick={() => setActiveConv(c)}
-                      className={`w-full text-left px-4 py-3 border-b border-zinc-800 transition-colors ${
-                        active ? 'bg-zinc-800' : 'hover:bg-zinc-800/60'
+                      className={`w-full text-left px-4 py-4 min-h-[56px] border-b border-zinc-800 transition-colors ${
+                        active ? 'bg-zinc-800' : 'hover:bg-zinc-800/60 active:bg-zinc-800'
                       }`}
                     >
                       <div className="flex items-center gap-2">
@@ -613,17 +624,21 @@ function ChatPageClient() {
               </div>
             </div>
 
-            {/* Main chat panel */}
-            <div className="md:col-span-2 bg-zinc-900 border border-zinc-700 rounded-3xl flex flex-col overflow-hidden">
+            {/* Main chat panel – full width on mobile when open */}
+            <div
+              className={`md:col-span-2 bg-zinc-900 border border-zinc-700 rounded-2xl sm:rounded-3xl flex flex-col overflow-hidden ${
+                isMobileChatOpen ? 'flex' : 'hidden md:flex'
+              }`}
+            >
               {!activeConv ? (
                 <div className="flex-1 flex items-center justify-center p-8 text-center">
                   <div className="space-y-4 max-w-sm">
-                    <p className="text-zinc-400">
+                    <p className="text-zinc-400 text-sm sm:text-base">
                       Select a conversation from your inbox or start a new one.
                     </p>
                     <button
                       onClick={contactOfficial}
-                      className="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 font-medium transition-colors"
+                      className="min-h-[48px] px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 font-medium transition-colors"
                     >
                       Message Official MAUI Contact
                     </button>
@@ -631,22 +646,30 @@ function ChatPageClient() {
                 </div>
               ) : (
                 <>
-                  <div className="p-4 border-b border-zinc-700 flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-zinc-100">
+                  <div className="p-3 sm:p-4 border-b border-zinc-700 flex items-center gap-3">
+                    {/* Mobile back button */}
+                    <button
+                      onClick={() => setActiveConv(null)}
+                      className="md:hidden min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-300"
+                      aria-label="Back to inbox"
+                    >
+                      ←
+                    </button>
+                    <div className="min-w-0">
+                      <p className="font-medium text-zinc-100 truncate">
                         {isOfficialContact(activeConv.peerAddress)
                           ? 'MAUI Official Contact'
                           : shortAddr(activeConv.peerAddress || 'Unknown')}
                       </p>
                       {isOfficialContact(activeConv.peerAddress) && (
-                        <p className="text-xs text-zinc-500 font-mono mt-0.5">
+                        <p className="text-xs text-zinc-500 font-mono mt-0.5 truncate">
                           {MAUI_CONTACT_ADDRESS}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3">
                     {messages.map((m) => {
                       const isMe =
                         m.senderAddress.toLowerCase() === address?.toLowerCase() ||
@@ -659,7 +682,7 @@ function ChatPageClient() {
                           className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
                         >
                           <div
-                            className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${
+                            className={`max-w-[85%] sm:max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${
                               isMe
                                 ? 'bg-blue-600 text-white rounded-br-md'
                                 : 'bg-zinc-800 text-zinc-100 rounded-bl-md'
@@ -680,7 +703,7 @@ function ChatPageClient() {
                     <div ref={messagesEndRef} />
                   </div>
 
-                  <div className="p-4 border-t border-zinc-700">
+                  <div className="p-3 sm:p-4 border-t border-zinc-700">
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -690,12 +713,12 @@ function ChatPageClient() {
                         onKeyDown={(e) =>
                           e.key === 'Enter' && !e.shiftKey && sendMessage()
                         }
-                        className="flex-1 bg-zinc-800 border border-zinc-600 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
+                        className="flex-1 min-h-[48px] bg-zinc-800 border border-zinc-600 rounded-2xl px-4 py-3 text-base sm:text-sm focus:outline-none focus:border-blue-500"
                       />
                       <button
                         onClick={sendMessage}
                         disabled={!draft.trim() || sending}
-                        className="px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed font-medium transition-colors"
+                        className="min-h-[48px] min-w-[72px] px-5 rounded-2xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed font-medium transition-colors"
                       >
                         {sending ? '…' : 'Send'}
                       </button>
@@ -709,26 +732,34 @@ function ChatPageClient() {
 
         {/* ════════ BROWSER TAB ════════ */}
         {tab === 'browser' && (
-          <div className="bg-zinc-900 border border-zinc-700 rounded-3xl overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
-            {/* URL bar */}
-            <div className="p-3 border-b border-zinc-700 flex gap-2 items-center">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col min-h-[70dvh] sm:h-[calc(100vh-12rem)]">
+            <div className="p-3 border-b border-zinc-700 flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
                 value={browserInput}
                 onChange={(e) => setBrowserInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && goBrowser()}
                 placeholder="https://…"
-                className="flex-1 bg-zinc-800 border border-zinc-600 rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none focus:border-blue-500"
+                className="flex-1 min-h-[48px] bg-zinc-800 border border-zinc-600 rounded-xl px-4 py-2.5 text-base sm:text-sm font-mono focus:outline-none focus:border-blue-500"
               />
-              <button
-                onClick={goBrowser}
-                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-sm font-medium transition-colors"
-              >
-                Go
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={goBrowser}
+                  className="flex-1 sm:flex-none min-h-[48px] px-5 rounded-xl bg-blue-600 hover:bg-blue-500 text-sm font-medium transition-colors"
+                >
+                  Go
+                </button>
+                <a
+                  href={browserUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 sm:flex-none min-h-[48px] px-5 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-sm font-medium transition-colors inline-flex items-center justify-center"
+                >
+                  Open ↗
+                </a>
+              </div>
             </div>
 
-            {/* Quick links */}
             <div className="px-3 py-2 border-b border-zinc-800 flex flex-wrap gap-2">
               {[
                 { label: 'MAUI Home', url: 'https://mauicoin.vercel.app' },
@@ -743,35 +774,36 @@ function ChatPageClient() {
                     setBrowserUrl(q.url);
                     setBrowserKey((k) => k + 1);
                   }}
-                  className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 transition-colors"
+                  className="min-h-[40px] text-sm px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 transition-colors"
                 >
                   {q.label}
                 </button>
               ))}
             </div>
 
-            {/* Frame */}
-            <div className="flex-1 bg-zinc-950 relative">
+            {/* Embed area – many sites block iframes; Open ↗ is the reliable path */}
+            <div className="flex-1 bg-zinc-950 relative min-h-[40vh]">
               <iframe
                 key={browserKey}
                 src={browserUrl}
                 title="MAUI Browser"
                 className="absolute inset-0 w-full h-full border-0"
                 sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+                referrerPolicy="no-referrer"
               />
             </div>
 
-            <p className="px-4 py-2 text-[11px] text-zinc-500 border-t border-zinc-800">
-              In-app browser · Some sites may block embedding · Later this will open{' '}
-              <span className="text-blue-400">yourname.maui</span> sites and IPFS content
+            <p className="px-4 py-3 text-xs text-zinc-500 border-t border-zinc-800 leading-relaxed">
+              Many sites block in-app embedding. Use <strong className="text-zinc-300">Open ↗</strong> for
+              a full browser tab. Later this will open <span className="text-blue-400">yourname.maui</span> and IPFS content.
             </p>
           </div>
         )}
 
         {/* ════════ PROFILE TAB ════════ */}
         {tab === 'profile' && (
-          <div className="max-w-xl mx-auto space-y-4">
-            <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-6 md:p-8">
+          <div className="max-w-xl mx-auto space-y-4 pb-4">
+            <div className="bg-zinc-900 border border-zinc-700 rounded-2xl sm:rounded-3xl p-5 sm:p-8">
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-xl font-bold shrink-0">
                   {address ? address.slice(2, 4).toUpperCase() : '?'}
@@ -803,14 +835,14 @@ function ChatPageClient() {
               </div>
             </div>
 
-            <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-6 space-y-3">
+            <div className="bg-zinc-900 border border-zinc-700 rounded-2xl sm:rounded-3xl p-5 sm:p-6 space-y-3">
               <h2 className="font-semibold text-zinc-100">Quick actions</h2>
               <button
                 onClick={() => {
                   setTab('inbox');
                   contactOfficial();
                 }}
-                className="w-full text-left px-4 py-3 rounded-2xl bg-zinc-800 hover:bg-zinc-750 border border-zinc-700 transition-colors"
+                className="w-full text-left min-h-[56px] px-4 py-3 rounded-2xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 transition-colors"
               >
                 <p className="text-sm font-medium text-zinc-100">Message Official Contact</p>
                 <p className="text-xs text-zinc-500 mt-0.5 font-mono">
@@ -819,7 +851,7 @@ function ChatPageClient() {
               </button>
               <Link
                 href="/dns"
-                className="block w-full text-left px-4 py-3 rounded-2xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 transition-colors"
+                className="block w-full text-left min-h-[56px] px-4 py-3 rounded-2xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 transition-colors"
               >
                 <p className="text-sm font-medium text-zinc-100">Register a .maui name</p>
                 <p className="text-xs text-zinc-500 mt-0.5">
@@ -828,7 +860,7 @@ function ChatPageClient() {
               </Link>
               <Link
                 href="/metamask"
-                className="block w-full text-left px-4 py-3 rounded-2xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 transition-colors"
+                className="block w-full text-left min-h-[56px] px-4 py-3 rounded-2xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 transition-colors"
               >
                 <p className="text-sm font-medium text-zinc-100">Wallet dashboard</p>
                 <p className="text-xs text-zinc-500 mt-0.5">
@@ -837,8 +869,9 @@ function ChatPageClient() {
               </Link>
             </div>
 
-            <p className="text-center text-xs text-zinc-600 px-4">
-              Profile will later show bio, avatar, links and yourname.maui when DNS is live.
+            <p className="text-center text-xs text-zinc-600 px-4 leading-relaxed">
+              On mobile, Chrome or MetaMask&apos;s browser works best for XMTP.
+              Brave can hang while opening the inbox.
             </p>
           </div>
         )}
