@@ -387,7 +387,12 @@ function ChatPageClient() {
     if (!activeConv || !draft.trim() || sending) return;
     setSending(true);
     try {
-      await activeConv._raw.send(draft.trim());
+      const conv = activeConv._raw;
+      if (typeof conv.sendText === 'function') {
+        await conv.sendText(draft.trim());
+      } else {
+        await conv.send(draft.trim());
+      }
       setDraft('');
     } catch (err: any) {
       console.error(err);
@@ -424,10 +429,27 @@ function ChatPageClient() {
     };
     setSending(true);
     try {
-      await activeConv._raw.send(encodePaymentRequest(req));
+      const body = encodePaymentRequest(req);
+      const conv = activeConv._raw;
+      // Browser SDK: use sendText for plain text (send() expects EncodedContent)
+      if (typeof conv.sendText === 'function') {
+        await conv.sendText(body);
+      } else {
+        await conv.send(body);
+      }
       setShowPayModal(false);
       setPayAmount('');
       setPayNote('');
+      // Refresh local message list
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `local-${req.id}`,
+          content: body,
+          senderAddress: address,
+          sentAt: new Date(),
+        },
+      ]);
     } catch (err: any) {
       console.error(err);
       alert(err?.message || 'Failed to send payment request');
@@ -446,9 +468,10 @@ function ChatPageClient() {
     setPayError(null);
     setPayTxHash(undefined);
     try {
-      // Switch chain if needed
+      // Switch chain if needed, then wait briefly for wallet to settle
       if (chainId !== req.chainId) {
         await switchChainAsync({ chainId: req.chainId });
+        await new Promise((r) => setTimeout(r, 500));
       }
       const decimals = tokenDecimals(req.token);
       const value = parseUnits(req.amount, decimals);
@@ -459,8 +482,10 @@ function ChatPageClient() {
           to: req.to as `0x${string}`,
           value,
           chainId: req.chainId,
+          gas: BigInt(21000),
         });
       } else {
+        // ERC20 transfer is cheap; pin gas so bad estimates cannot blow past RPC limits
         const tokenAddr =
           req.token === 'USDC' ? USDC_BASE : MAUI_TOKEN;
         hash = await writeContractAsync({
@@ -469,6 +494,7 @@ function ChatPageClient() {
           functionName: 'transfer',
           args: [req.to as `0x${string}`, value],
           chainId: req.chainId,
+          gas: BigInt(100_000),
         });
       }
 
@@ -486,7 +512,22 @@ function ChatPageClient() {
         chainId: req.chainId,
         createdAt: Date.now(),
       };
-      await activeConv._raw.send(encodePaymentReceipt(receipt));
+      const body = encodePaymentReceipt(receipt);
+      const conv = activeConv._raw;
+      if (typeof conv.sendText === 'function') {
+        await conv.sendText(body);
+      } else {
+        await conv.send(body);
+      }
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `local-rcpt-${req.id}`,
+          content: body,
+          senderAddress: address,
+          sentAt: new Date(),
+        },
+      ]);
     } catch (err: any) {
       console.error(err);
       setPayError(err?.shortMessage || err?.message || 'Payment failed');

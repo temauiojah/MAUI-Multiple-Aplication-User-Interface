@@ -69,23 +69,41 @@ const REQ_PREFIX = 'MAUI_PAY_REQ:';
 const RCPT_PREFIX = 'MAUI_PAY_RCPT:';
 
 export function encodePaymentRequest(req: PaymentRequest): string {
-  return REQ_PREFIX + JSON.stringify(req);
+  // Human-readable body + machine line (plain text for XMTP ContentTypeText)
+  const lines = [
+    'Payment request',
+    `${req.amount} ${req.token} on ${chainLabel(req.chainId)}`,
+    `To: ${req.to}`,
+  ];
+  if (req.note) lines.push(`Note: ${req.note}`);
+  lines.push(REQ_PREFIX + JSON.stringify(req));
+  return lines.join('\n');
 }
 
 export function encodePaymentReceipt(rcpt: PaymentReceipt): string {
-  return RCPT_PREFIX + JSON.stringify(rcpt);
+  const lines = [
+    'Payment sent',
+    `${rcpt.amount} ${rcpt.token}`,
+    `Tx: ${rcpt.txHash}`,
+    RCPT_PREFIX + JSON.stringify(rcpt),
+  ];
+  return lines.join('\n');
 }
 
 export function parsePaymentPayload(
   content: string
 ): PaymentRequest | PaymentReceipt | null {
   try {
-    if (content.startsWith(REQ_PREFIX)) {
-      const data = JSON.parse(content.slice(REQ_PREFIX.length));
+    const reqIdx = content.indexOf(REQ_PREFIX);
+    if (reqIdx >= 0) {
+      const raw = content.slice(reqIdx + REQ_PREFIX.length).trim();
+      const data = JSON.parse(raw.split('\n')[0]);
       if (data?.kind === 'payment_request' && data?.v === 1) return data as PaymentRequest;
     }
-    if (content.startsWith(RCPT_PREFIX)) {
-      const data = JSON.parse(content.slice(RCPT_PREFIX.length));
+    const rcptIdx = content.indexOf(RCPT_PREFIX);
+    if (rcptIdx >= 0) {
+      const raw = content.slice(rcptIdx + RCPT_PREFIX.length).trim();
+      const data = JSON.parse(raw.split('\n')[0]);
       if (data?.kind === 'payment_receipt' && data?.v === 1) return data as PaymentReceipt;
     }
   } catch {
@@ -95,7 +113,7 @@ export function parsePaymentPayload(
 }
 
 export function isPaymentMessage(content: string): boolean {
-  return content.startsWith(REQ_PREFIX) || content.startsWith(RCPT_PREFIX);
+  return content.includes(REQ_PREFIX) || content.includes(RCPT_PREFIX);
 }
 
 export function tokenDecimals(token: PayToken): number {
